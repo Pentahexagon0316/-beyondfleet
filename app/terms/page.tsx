@@ -8,7 +8,7 @@ const sections = [
   { id: 'intro', title: '1. 서비스 소개' },
   { id: 'obligations', title: '2. 이용자 의무' },
   { id: 'usage', title: '3. 서비스 이용' },
-  { id: 'nft', title: '4. NFT 멤버십' },
+  { id: 'membership', title: '4. 프리미엄 멤버십' },
   { id: 'content', title: '5. 콘텐츠 권리' },
   { id: 'disclaimer', title: '6. 투자 면책조항' },
   { id: 'liability', title: '7. 책임 제한' },
@@ -101,8 +101,8 @@ export default function TermsPage() {
               <section id="intro" className="mb-12">
                 <h2 className="text-2xl font-bold text-white mb-4">1. 서비스 소개</h2>
                 <p className="text-gray-300 leading-relaxed mb-4">
-                  BeyondFleet(이하 &quot;서비스&quot;)은 암호화폐 정보 제공 및 교육을 목적으로 하는 플랫폼입니다.
-                  본 서비스는 시장 정보, 교육 콘텐츠, 커뮤니티 기능을 제공하며, NFT 기반 멤버십 시스템을 운영합니다.
+                  BeyondFleet(이하 &quot;서비스&quot;)은 AI 기반 금융 리터러시 및 의사결정 교육을 목적으로 하는 플랫폼입니다.
+                  본 서비스는 시장 데이터 맥락, 교육 콘텐츠, 커뮤니티 기능, 가설 사색 노트를 작성하는 Thinking Lab을 제공하며, 개인 프리미엄 학습 교육 서비스 형태의 멤버십 시스템을 운영합니다.
                 </p>
                 <p className="text-gray-300 leading-relaxed">
                   본 약관에 동의함으로써 귀하는 서비스 이용에 관한 모든 조건을 이해하고 수락하는 것으로 간주됩니다.
@@ -145,26 +145,23 @@ export default function TermsPage() {
                 </p>
               </section>
 
-              {/* NFT 멤버십 */}
-              <section id="nft" className="mb-12">
-                <h2 className="text-2xl font-bold text-white mb-4">4. NFT 멤버십</h2>
+              {/* 프리미엄 멤버십 */}
+              <section id="membership" className="mb-12">
+                <h2 className="text-2xl font-bold text-white mb-4">4. 프리미엄 멤버십</h2>
 
                 <h3 className="text-xl font-semibold text-white mt-6 mb-3">4.1 구매</h3>
                 <p className="text-gray-300 leading-relaxed mb-4">
-                  NFT 멤버십은 Solana 또는 Ethereum 블록체인을 통해 구매할 수 있습니다.
-                  구매 시 네트워크 수수료(가스비)가 발생할 수 있습니다.
+                  프리미엄 멤버십 서비스는 법정 화폐 및 신용카드, 안전한 간편결제 시스템 등을 통해 결제하고 이용할 수 있습니다.
                 </p>
 
                 <h3 className="text-xl font-semibold text-white mt-6 mb-3">4.2 환불 정책</h3>
                 <p className="text-gray-300 leading-relaxed mb-4">
-                  블록체인 특성상 NFT 구매는 취소 및 환불이 불가능합니다.
-                  구매 전 신중하게 검토해 주시기 바랍니다.
+                  이용자는 관련 법령(전자상거래법 등)에 의거하여 정당한 환불 기준에 따라 결제 후 일정 기간 이내에 환불을 요청할 수 있으며, 상세 규정은 별도의 환불 가이드라인을 따릅니다.
                 </p>
 
                 <h3 className="text-xl font-semibold text-white mt-6 mb-3">4.3 혜택 변경</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  멤버십 등급별 혜택은 서비스 운영 상황에 따라 변경될 수 있습니다.
-                  변경 시 사전에 공지됩니다.
+                  멤버십 등급별 학습 혜택은 서비스 교육 품질 향상 등 운영 상황에 따라 변경될 수 있습니다. 변경 시 사전에 공지됩니다.
                 </p>
               </section>
 

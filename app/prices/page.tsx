@@ -7,8 +7,7 @@ import { Star } from 'lucide-react'
 import { useBinanceWebSocket, getBinanceSymbol } from '@/lib/hooks/useBinanceWebSocket'
 import { supabase } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
-import { useAccount } from 'wagmi'
-import { useWallet } from '@solana/wallet-adapter-react'
+
 
 interface Coin {
   id: string
@@ -42,11 +41,9 @@ function PricesContent() {
   const [user, setUser] = useState<User | null>(null)
   const [watchlist, setWatchlist] = useState<Set<string>>(new Set())
 
-  // Web3 wallet states
-  const { address: ethAddress, isConnected: isEthConnected } = useAccount()
-  const { publicKey: solPublicKey, connected: isSolConnected } = useWallet()
-  const isWalletConnected = isEthConnected || isSolConnected
-  const walletAddress = ethAddress || solPublicKey?.toBase58() || null
+  // Web3 wallet states disabled
+  const isWalletConnected = false
+  const walletAddress = null as any
 
   // Binance WebSocket for real-time prices
   const { prices: binancePrices, isConnected: wsConnected } = useBinanceWebSocket(allCoinIds)
@@ -303,7 +300,7 @@ function PricesContent() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-3xl md:text-4xl font-bold text-white">
-              실시간 암호화폐 시세
+              Market Context
             </h1>
             {wsConnected && (
               <span className="flex items-center gap-1.5 px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full text-green-400 text-xs">
@@ -313,7 +310,7 @@ function PricesContent() {
             )}
           </div>
           <p className="text-gray-400">
-            Binance API를 통해 실시간으로 업데이트됩니다
+            주요 디지털 자산 데이터를 차분한 시장 맥락으로 확인합니다.
           </p>
         </div>
 
@@ -322,7 +319,7 @@ function PricesContent() {
           <div className="relative">
             <input
               type="text"
-              placeholder="코인 이름 또는 심볼로 검색..."
+              placeholder="Asset name or symbol..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value)
@@ -373,7 +370,7 @@ function PricesContent() {
                   <tr className="text-left text-gray-400 text-sm">
                     <th className="px-4 py-4 w-12"></th>
                     <th className="px-4 py-4 w-16">#</th>
-                    <th className="px-4 py-4">코인</th>
+                    <th className="px-4 py-4">Asset</th>
                     <th className="px-4 py-4 text-right cursor-pointer hover:text-white" onClick={() => handleSort('price')}>
                       가격 <SortIcon column="price" />
                     </th>

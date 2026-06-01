@@ -1,9 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  devIndicators: {
-    appIsrStatus: false,
-    buildActivity: false,
-  },
   images: {
     remotePatterns: [
       {
@@ -29,6 +25,22 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'picsum.photos',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.cointelegraph.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 's3.cointelegraph.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.coindesk.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'static.coindesk.com',
       },
     ],
   },
@@ -68,6 +80,18 @@ const nextConfig = {
   },
   // Disable source maps in production
   productionBrowserSourceMaps: false,
+  async redirects() {
+    return [
+      {
+        source: '/signals/:id',
+        destination: '/market-weather/:id',
+        permanent: true,
+      },
+    ]
+  },
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
 }
 
 export default nextConfig

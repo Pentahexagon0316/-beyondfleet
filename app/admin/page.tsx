@@ -61,8 +61,8 @@ export default function AdminDashboard() {
       // Fetch recent activities (mock data for now)
       setActivities([
         { id: '1', type: 'user', description: '새 회원 가입: user@example.com', created_at: new Date().toISOString() },
-        { id: '2', type: 'nft', description: 'NFT 판매 완료: Galaxy Explorer #001', created_at: new Date(Date.now() - 3600000).toISOString() },
-        { id: '3', type: 'auction', description: '옥션 입찰: Cosmic Warrior #012', created_at: new Date(Date.now() - 7200000).toISOString() },
+        { id: '2', type: 'archive', description: 'Growth archive milestone recorded', created_at: new Date(Date.now() - 3600000).toISOString() },
+        { id: '3', type: 'legacy', description: 'Legacy auction module remains inactive', created_at: new Date(Date.now() - 7200000).toISOString() },
       ])
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
@@ -74,8 +74,8 @@ export default function AdminDashboard() {
   const statCards = [
     { label: '총 회원 수', value: stats.totalUsers, icon: Users, color: 'from-purple-500 to-purple-700' },
     { label: '오늘 방문자', value: stats.todayVisitors, icon: Eye, color: 'from-cyan-500 to-cyan-700' },
-    { label: 'NFT 판매', value: stats.nftSales, icon: Image, color: 'from-green-500 to-green-700' },
-    { label: '진행중 옥션', value: stats.activeAuctions, icon: Activity, color: 'from-amber-500 to-amber-700' },
+    { label: 'Archive items', value: stats.nftSales, icon: Image, color: 'from-slate-500 to-slate-700' },
+    { label: 'Legacy auctions', value: stats.activeAuctions, icon: Activity, color: 'from-amber-500 to-amber-700' },
   ]
 
   function formatTime(dateString: string) {

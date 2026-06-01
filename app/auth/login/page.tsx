@@ -36,6 +36,26 @@ export default function LoginPage() {
     }
   }
 
+  const handleGoogleLogin = async () => {
+    setError('')
+    setLoading(true)
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
+
+      if (error) throw error
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google 로그인에 실패했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
@@ -107,7 +127,7 @@ export default function LoginPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  로그인 중...
+                   처리 중...
                 </span>
               ) : (
                 '로그인'
@@ -130,10 +150,8 @@ export default function LoginPage() {
             type="button"
             variant="outline"
             className="w-full"
-            onClick={() => {
-              // Google OAuth will be implemented after Supabase setup
-              alert('Supabase 프로젝트 설정 후 사용 가능합니다.')
-            }}
+            disabled={loading}
+            onClick={handleGoogleLogin}
           >
             <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
               <path

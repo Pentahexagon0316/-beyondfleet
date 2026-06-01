@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import Image from 'next/image'
-import { Search, ChevronDown, Mail, MessageCircle } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import Link from 'next/link'
+import { ChevronDown, Mail, Search } from 'lucide-react'
 
 interface FAQItem {
   question: string
@@ -11,7 +11,7 @@ interface FAQItem {
 
 interface FAQCategory {
   id: string
-  icon: string
+  label: string
   title: string
   items: FAQItem[]
 }
@@ -19,117 +19,98 @@ interface FAQCategory {
 const faqData: FAQCategory[] = [
   {
     id: 'intro',
-    icon: '🦦',
+    label: '01',
     title: 'BeyondFleet 소개',
     items: [
       {
         question: 'BeyondFleet이 뭔가요?',
-        answer: 'BeyondFleet은 암호화폐 초보자를 위한 교육 및 커뮤니티 플랫폼입니다. "개미는 땅을 파고, 우리는 우주를 판다" - 함께 배우고 성장하는 공간이에요.'
+        answer: 'BeyondFleet은 Daily Brief, 구조화된 학습, reflection을 통해 더 나은 판단력을 쌓도록 돕는 AI-native macro learning and intelligence platform입니다.',
       },
       {
-        question: 'Otty는 누구인가요?',
-        answer: 'Otty는 BeyondFleet의 마스코트 우주 수달이에요! 물에서 우주로, 여러분의 여정을 함께합니다.'
+        question: '투자 조언을 제공하나요?',
+        answer: '아니요. BeyondFleet은 정보 제공과 교육 목적의 플랫폼입니다. 매수, 매도, 보유 권유를 제공하지 않습니다.',
       },
       {
         question: '무료로 사용할 수 있나요?',
-        answer: '네! 기본 기능은 무료입니다. 프리미엄 뉴스와 고급 분석은 NFT 멤버십이 필요해요.'
-      }
-    ]
+        answer: '기본 Daily Brief와 Learning Path는 무료로 시작할 수 있습니다. 일부 깊이 있는 brief archive와 연구 기능은 access level에 따라 열릴 수 있습니다.',
+      },
+    ],
   },
   {
-    id: 'membership',
-    icon: '💳',
-    title: '멤버십 & NFT',
+    id: 'brief',
+    label: '02',
+    title: 'Daily Brief',
     items: [
       {
-        question: 'NFT 멤버십이 뭔가요?',
-        answer: '등급별 NFT를 구매하면 프리미엄 콘텐츠에 접근할 수 있어요. Cadet부터 Admiral까지 5단계가 있습니다.'
+        question: 'Daily Brief는 무엇을 다루나요?',
+        answer: '주요 macro shift, AI economy signal, risk condition, key events, 그리고 오늘 생각해볼 reflection prompt를 다룹니다.',
       },
       {
-        question: 'NFT는 어떻게 구매하나요?',
-        answer: '지갑(MetaMask, Phantom)을 연결하고 멤버십 페이지에서 구매할 수 있어요.'
+        question: '왜 매일 돌아와야 하나요?',
+        answer: '좋은 판단력은 한 번의 정보가 아니라 반복적인 관찰, 학습, 회고에서 만들어집니다. Daily Brief는 이 반복 루프의 시작점입니다.',
       },
-      {
-        question: '어떤 지갑을 지원하나요?',
-        answer: 'MetaMask(이더리움), Phantom/Solflare(솔라나)를 지원합니다.'
-      }
-    ]
+    ],
   },
   {
-    id: 'news',
-    icon: '📰',
-    title: '뉴스 & 분석',
+    id: 'learning',
+    label: '03',
+    title: 'Learning Path',
     items: [
       {
-        question: '프리미엄 뉴스는 뭐가 다른가요?',
-        answer: '기관 동향, 고래 추적, AI 분석 리포트 등 심층 정보를 제공해요.'
+        question: '학습은 어떤 구조인가요?',
+        answer: 'Macro Foundations, Crypto Macro, AI Economy 같은 track 기반 구조로, lesson completion, XP, level, continue learning queue를 제공합니다.',
       },
       {
-        question: 'AI 분석은 어떻게 생성되나요?',
-        answer: 'Claude AI가 매일 시장을 분석하고 등급별 맞춤 리포트를 제공합니다.'
+        question: '온라인 강의 플랫폼과 무엇이 다른가요?',
+        answer: 'BeyondFleet은 강의 목록보다 daily intelligence loop에 초점을 둡니다. Brief에서 출발해 관련 lesson으로 이어지고, reflection으로 생각을 정리합니다.',
       },
-      {
-        question: '고래 추적이 뭔가요?',
-        answer: '대형 지갑의 거래를 추적해서 시장 움직임을 예측하는 데 도움을 줘요.'
-      }
-    ]
+    ],
   },
   {
-    id: 'education',
-    icon: '📚',
-    title: '교육',
+    id: 'reflection',
+    label: '04',
+    title: 'Reflection',
     items: [
       {
-        question: '교육 콘텐츠는 어디서 볼 수 있나요?',
-        answer: '교육 메뉴에서 초급/중급/고급 강의를 볼 수 있어요.'
+        question: 'Reflection Journal은 왜 필요한가요?',
+        answer: '읽은 내용을 기록하고, 바뀐 생각과 다시 점검할 가정을 남기면 단순 소비가 아니라 장기적 판단력으로 이어집니다.',
       },
       {
-        question: '모든 강의가 무료인가요?',
-        answer: '초급 강의는 무료, 중급/고급은 멤버십 등급에 따라 접근 가능해요.'
-      }
-    ]
+        question: '공개 reflection은 어떤 톤이어야 하나요?',
+        answer: '조용하고 근거 있는 생각, 학습 기록, 질문 중심의 글을 권장합니다. 과장된 수익 인증이나 자극적인 참여 유도는 지양합니다.',
+      },
+    ],
   },
   {
-    id: 'auction',
-    icon: '🎁',
-    title: 'NFT 옥션 & 랜덤박스',
+    id: 'access',
+    label: '05',
+    title: 'Access & Growth Archive',
     items: [
       {
-        question: '옥션은 언제 하나요?',
-        answer: '매주 목요일 저녁 8시(KST)에 진행됩니다.'
+        question: 'Membership은 무엇을 의미하나요?',
+        answer: 'Membership은 status나 투기 대상이 아니라 더 깊은 brief, 연구 참여, reflection tools, community standards를 지원하는 access layer입니다.',
       },
       {
-        question: '랜덤박스에서 뭐가 나오나요?',
-        answer: '등급별 NFT가 랜덤으로 나와요. 선물하기도 가능합니다.'
-      }
-    ]
+        question: 'Growth Archive는 무엇인가요?',
+        answer: '학습 streak, track completion, contribution, mentorship 같은 장기 성장 이력을 차분하게 보관하는 archive입니다.',
+      },
+    ],
   },
   {
     id: 'security',
-    icon: '🔐',
+    label: '06',
     title: '계정 & 보안',
     items: [
       {
-        question: '지갑 연결이 안전한가요?',
-        answer: '네! 서명 검증만 하고 자산 이동 권한은 요청하지 않아요.'
+        question: '지갑 연결이 필요한가요?',
+        answer: '기본 사용에는 이메일 로그인이 우선입니다. 지갑 연결은 필요한 기능에서만 보조적으로 사용되며, 자산 이동 권한을 요청하지 않는 방향을 유지합니다.',
       },
       {
         question: '비밀번호를 잊어버렸어요.',
-        answer: '로그인 페이지에서 "비밀번호 재설정"을 클릭하세요.'
-      }
-    ]
+        answer: '로그인 화면에서 비밀번호 재설정을 진행하세요.',
+      },
+    ],
   },
-  {
-    id: 'disclaimer',
-    icon: '⚠️',
-    title: '면책조항',
-    items: [
-      {
-        question: '투자 조언을 받을 수 있나요?',
-        answer: 'BeyondFleet은 정보 제공 목적이며, 투자 조언이 아닙니다. 모든 투자 결정과 책임은 본인에게 있습니다.'
-      }
-    ]
-  }
 ]
 
 function AccordionItem({ item, isOpen, onToggle }: {
@@ -138,14 +119,14 @@ function AccordionItem({ item, isOpen, onToggle }: {
   onToggle: () => void
 }) {
   return (
-    <div className="border-b border-purple-500/20 last:border-b-0">
+    <div className="border-b border-white/10 last:border-b-0">
       <button
         onClick={onToggle}
-        className="w-full py-4 px-4 flex items-center justify-between text-left hover:bg-purple-500/5 transition-colors"
+        className="flex w-full items-center justify-between px-4 py-4 text-left transition hover:bg-white/[0.035]"
       >
-        <span className="font-medium text-white pr-4">{item.question}</span>
+        <span className="pr-4 font-medium text-white">{item.question}</span>
         <ChevronDown
-          className={`w-5 h-5 text-purple-400 flex-shrink-0 transition-transform duration-300 ${
+          className={`h-5 w-5 flex-shrink-0 text-cyan-200 transition-transform duration-300 ${
             isOpen ? 'rotate-180' : ''
           }`}
         />
@@ -155,7 +136,7 @@ function AccordionItem({ item, isOpen, onToggle }: {
           isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <p className="px-4 pb-4 text-gray-400 leading-relaxed">
+        <p className="px-4 pb-4 leading-7 text-gray-400">
           {item.answer}
         </p>
       </div>
@@ -194,32 +175,24 @@ function CategorySection({ category, searchQuery }: {
   }
 
   return (
-    <div className="mb-8">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
-          <span className="text-xl">{category.icon}</span>
-        </div>
-        <h2 className="text-xl font-bold text-white">{category.title}</h2>
-        <div className="relative w-8 h-8 opacity-60 hover:opacity-100 transition-opacity">
-          <Image
-            src="/images/otty.png"
-            alt="Otty"
-            fill
-            className="object-contain"
-          />
-        </div>
+    <section className="mb-8">
+      <div className="mb-4 flex items-center gap-3">
+        <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-cyan-100">
+          {category.label}
+        </span>
+        <h2 className="text-xl font-semibold text-white">{category.title}</h2>
       </div>
-      <div className="glass rounded-xl overflow-hidden">
+      <div className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.035]">
         {filteredItems.map((item, index) => (
           <AccordionItem
-            key={index}
+            key={item.question}
             item={item}
             isOpen={openItems.has(index)}
             onToggle={() => toggleItem(index)}
           />
         ))}
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -239,39 +212,32 @@ export default function FAQPage() {
   }, [searchQuery])
 
   return (
-    <main className="min-h-screen py-20 px-4">
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="relative w-24 h-24 mx-auto mb-6 animate-float">
-            <Image
-              src="/images/otty.png"
-              alt="Otty"
-              fill
-              className="object-contain"
-            />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            <span className="gradient-text">자주 묻는 질문</span>
-          </h1>
-          <p className="text-gray-400 text-lg">
-            BeyondFleet에 대해 궁금한 점을 찾아보세요
+    <main className="min-h-screen bg-space-deep px-4 py-16">
+      <div className="mx-auto max-w-3xl">
+        <section className="mb-12">
+          <p className="text-sm font-medium uppercase tracking-[0.18em] text-cyan-200/70">
+            FAQ
           </p>
-        </div>
+          <h1 className="mt-5 text-4xl font-semibold tracking-normal text-white md:text-6xl">
+            Clear answers for a calmer product.
+          </h1>
+          <p className="mt-5 text-lg leading-8 text-gray-300">
+            BeyondFleet is designed around Daily Briefs, structured learning, reflection,
+            and long-term judgment.
+          </p>
+        </section>
 
-        {/* Search */}
         <div className="relative mb-10">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+          <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500" />
           <input
             type="text"
             placeholder="질문 검색..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-4 bg-space-800 border border-purple-500/30 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all"
+            onChange={(event) => setSearchQuery(event.target.value)}
+            className="w-full rounded-lg border border-white/10 bg-slate-950/45 py-4 pl-12 pr-4 text-white placeholder-gray-500 outline-none transition focus:border-cyan-200/40"
           />
         </div>
 
-        {/* FAQ Categories */}
         {hasResults ? (
           faqData.map((category) => (
             <CategorySection
@@ -281,52 +247,34 @@ export default function FAQPage() {
             />
           ))
         ) : (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🔍</div>
-            <p className="text-gray-400 text-lg">
-              &quot;{searchQuery}&quot;에 대한 결과를 찾을 수 없어요
+          <div className="rounded-lg border border-white/10 bg-white/[0.035] p-10 text-center">
+            <p className="text-gray-400">
+              &quot;{searchQuery}&quot;에 대한 결과를 찾을 수 없습니다.
             </p>
           </div>
         )}
 
-        {/* Contact Section */}
-        <div className="mt-16 glass rounded-2xl p-8 text-center">
-          <div className="relative w-16 h-16 mx-auto mb-4">
-            <Image
-              src="/images/otty.png"
-              alt="Otty"
-              fill
-              className="object-contain animate-wiggle"
-            />
-          </div>
-          <h3 className="text-2xl font-bold text-white mb-2">
-            찾는 답이 없나요?
-          </h3>
-          <p className="text-gray-400 mb-6">
-            Otty가 직접 도와드릴게요!
+        <section className="mt-16 rounded-lg border border-white/10 bg-white/[0.035] p-8">
+          <h3 className="text-2xl font-semibold text-white">찾는 답이 없나요?</h3>
+          <p className="mt-3 leading-7 text-gray-400">
+            제품 방향, access, brief, learning loop에 대한 질문은 이메일로 보내주세요.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <a
               href="mailto:support@beyondfleet.io"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-full transition-colors"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-200 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100"
             >
-              <Mail className="w-5 h-5" />
+              <Mail className="h-4 w-4" />
               이메일 문의
             </a>
-            <a
-              href="https://discord.gg/beyondfleet"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-full transition-colors"
+            <Link
+              href="/roadmap"
+              className="inline-flex items-center justify-center rounded-lg border border-white/10 px-5 py-3 text-sm font-semibold text-gray-200 transition hover:border-cyan-200/40 hover:text-white"
             >
-              <MessageCircle className="w-5 h-5" />
-              Discord 참여
-            </a>
+              Product roadmap
+            </Link>
           </div>
-        </div>
-
-        {/* Footer spacer */}
-        <div className="h-20" />
+        </section>
       </div>
     </main>
   )

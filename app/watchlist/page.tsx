@@ -8,8 +8,7 @@ import { Star, Trash2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
 import { useBinanceWebSocket, getBinanceSymbol } from '@/lib/hooks/useBinanceWebSocket'
-import { useAccount } from 'wagmi'
-import { useWallet } from '@solana/wallet-adapter-react'
+
 
 interface WatchlistItem {
   id: string
@@ -39,11 +38,9 @@ export default function WatchlistPage() {
   const [priceFlash, setPriceFlash] = useState<Record<string, 'up' | 'down' | null>>({})
   const prevPricesRef = useRef<Record<string, number>>({})
 
-  // Web3 wallet states
-  const { address: ethAddress, isConnected: isEthConnected } = useAccount()
-  const { publicKey: solPublicKey, connected: isSolConnected } = useWallet()
-  const isWalletConnected = isEthConnected || isSolConnected
-  const walletAddress = ethAddress || solPublicKey?.toBase58() || null
+  // Web3 wallet states disabled
+  const isWalletConnected = false
+  const walletAddress = null as any
 
   // Get coin IDs for WebSocket
   const coinIds = watchlist.map(item => item.coin_id)
@@ -223,15 +220,15 @@ export default function WatchlistPage() {
       <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
           <Star className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-4">관심 코인</h1>
+          <h1 className="text-2xl font-bold text-white mb-4">Saved Research</h1>
           <p className="text-gray-400 mb-6">
-            관심 코인을 추가하려면 로그인이 필요합니다.
+            시장 관찰 항목을 저장하려면 로그인이 필요합니다.
           </p>
           <Link
             href="/prices"
             className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-500 text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
           >
-            시세 페이지로 이동
+            Market Context로 이동
           </Link>
         </div>
       </div>
@@ -272,7 +269,7 @@ export default function WatchlistPage() {
           <div className="flex items-center gap-3 mb-2">
             <Star className="w-8 h-8 text-yellow-400" fill="currentColor" />
             <h1 className="text-3xl md:text-4xl font-bold text-white">
-              관심 코인
+              Saved Research
             </h1>
             {wsConnected && (
               <span className="flex items-center gap-1.5 px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full text-green-400 text-xs">
@@ -282,7 +279,7 @@ export default function WatchlistPage() {
             )}
           </div>
           <p className="text-gray-400">
-            {watchlist.length}개의 코인을 관심 목록에 추가했습니다
+            {watchlist.length}개의 시장 관찰 항목을 저장했습니다
           </p>
         </div>
 
@@ -295,7 +292,7 @@ export default function WatchlistPage() {
               href="/prices"
               className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-cyan-500 text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
             >
-              코인 둘러보기
+              시장 맥락 둘러보기
             </Link>
           </div>
         ) : (
@@ -306,7 +303,7 @@ export default function WatchlistPage() {
                   <tr className="text-left text-gray-400 text-sm">
                     <th className="px-4 py-4 w-12"></th>
                     <th className="px-4 py-4">#</th>
-                    <th className="px-4 py-4">코인</th>
+                    <th className="px-4 py-4">Asset</th>
                     <th className="px-4 py-4 text-right">가격</th>
                     <th className="px-4 py-4 text-right">24h</th>
                     <th className="px-4 py-4 text-right hidden md:table-cell">시가총액</th>

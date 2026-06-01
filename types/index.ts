@@ -1,4 +1,4 @@
-// Crypto API Types
+// Market context API Types
 export interface CoinMarket {
   id: string
   symbol: string
@@ -46,48 +46,48 @@ export interface MembershipInfo {
 export const MEMBERSHIP_TIERS: Record<MembershipTier, MembershipInfo> = {
   cadet: {
     tier: 'cadet',
-    name: 'Cadet',
-    nameKr: '훈련생',
-    icon: '🌱',
+    name: 'Reader',
+    nameKr: '리더',
+    icon: '01',
     votePower: 1,
-    benefits: ['기본 시세 확인', '커뮤니티 접근', '무료 교육 콘텐츠'],
-    color: 'from-green-400 to-green-600',
+    benefits: ['Daily Brief 접근', 'Learning Path 시작', 'Reflection Journal'],
+    color: 'from-slate-400 to-slate-600',
   },
   navigator: {
     tier: 'navigator',
     name: 'Navigator',
     nameKr: '항해사',
-    icon: '⭐',
+    icon: '02',
     votePower: 2,
-    benefits: ['주간 마켓 리포트', '중급 교육 콘텐츠', '가격 알림 5개'],
-    color: 'from-blue-400 to-blue-600',
+    benefits: ['주간 인텔리전스 노트', '중급 학습 경로', 'Saved Research'],
+    color: 'from-cyan-300 to-sky-600',
   },
   pilot: {
     tier: 'pilot',
-    name: 'Pilot',
-    nameKr: '조종사',
-    icon: '🚀',
+    name: 'Analyst',
+    nameKr: '애널리스트',
+    icon: '03',
     votePower: 3,
-    benefits: ['실시간 가격 알림', '고급 교육 콘텐츠', '가격 알림 20개'],
-    color: 'from-purple-400 to-purple-600',
+    benefits: ['프리미엄 브리프 아카이브', '고급 학습 경로', '회고 템플릿'],
+    color: 'from-blue-300 to-cyan-700',
   },
   commander: {
     tier: 'commander',
-    name: 'Commander',
-    nameKr: '사령관',
-    icon: '🌟',
+    name: 'Mentor',
+    nameKr: '멘토',
+    icon: '04',
     votePower: 5,
-    benefits: ['1:1 멘토링 세션', '프리미엄 리포트', '무제한 알림'],
-    color: 'from-amber-400 to-amber-600',
+    benefits: ['리서치 서클 참여', '프리미엄 리포트', '멘토링 세션'],
+    color: 'from-amber-200 to-yellow-700',
   },
   admiral: {
     tier: 'admiral',
-    name: 'Admiral',
-    nameKr: '제독',
-    icon: '🌌',
+    name: 'Steward',
+    nameKr: '스튜어드',
+    icon: '05',
     votePower: 10,
-    benefits: ['VIP 모든 혜택', '비공개 채널 접근', '운영진 투표권'],
-    color: 'from-rose-400 to-rose-600',
+    benefits: ['Founding archive 접근', '비공개 스터디 서클', '기여 기준 제안'],
+    color: 'from-stone-300 to-amber-700',
   },
 }
 

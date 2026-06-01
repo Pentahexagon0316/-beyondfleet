@@ -1,28 +1,39 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
-import { supabase } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
-import { useAccount } from 'wagmi'
-import { useWallet } from '@solana/wallet-adapter-react'
-import { BookOpen, PenTool, Users, TrendingUp, Heart, MessageCircle, Eye, ChevronRight } from 'lucide-react'
+import {
+  ArrowRight,
+  BookOpen,
+  ChevronRight,
+  Eye,
+  Heart,
+  Lock,
+  NotebookPen,
+  PenTool,
+  Users,
+} from 'lucide-react'
+import { supabase } from '@/lib/supabase/client'
+import { sanitizeErrorMessage } from '@/lib/utils/error-sanitizer'
+
 
 interface PublicJournal {
   id: string
-  user_id?: string
-  wallet_address?: string
   author_name: string
   title: string
   content: string
-  goal_amount?: number
-  current_amount?: number
   status: 'in_progress' | 'completed'
   likes: number
   views: number
   created_at: string
 }
+
+const reflectionPrompts = [
+  "What changed in my view after today's brief?",
+  'Which assumption should I revisit this week?',
+  'What topic keeps returning in my notes?',
+]
 
 export default function JournalPage() {
   const [user, setUser] = useState<User | null>(null)
@@ -31,21 +42,12 @@ export default function JournalPage() {
   const [myJournalCount, setMyJournalCount] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
-  // Web3 wallet states
-  const { address: ethAddress, isConnected: isEthConnected } = useAccount()
-  const { publicKey: solPublicKey, connected: isSolConnected } = useWallet()
-  const isWalletConnected = isEthConnected || isSolConnected
-  const walletAddress = ethAddress || solPublicKey?.toBase58() || null
-
   useEffect(() => {
     async function init() {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
-
-      // Fetch public journals
       await fetchPublicJournals()
 
-      // Fetch my journal count
       if (user) {
         await fetchMyJournalCount(user.id)
       }
@@ -53,7 +55,7 @@ export default function JournalPage() {
 
     init()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null)
       if (session?.user) {
         await fetchMyJournalCount(session.user.id)
@@ -61,7 +63,7 @@ export default function JournalPage() {
     })
 
     return () => subscription.unsubscribe()
-  }, [walletAddress])
+  }, [])
 
   async function fetchPublicJournals() {
     setLoading(true)
@@ -72,15 +74,13 @@ export default function JournalPage() {
         .select('*')
         .eq('is_public', true)
         .order('created_at', { ascending: false })
-        .limit(20)
+        .limit(6)
 
       if (queryError) {
-        console.error('Supabase query error:', queryError)
-        // 테이블이 없는 경우
         if (queryError.code === '42P01' || queryError.message?.includes('does not exist')) {
-          setError('데이터베이스 테이블이 아직 생성되지 않았습니다.')
+          setError('Reflection database table has not been created yet.')
         } else {
-          setError(`데이터를 불러오는 중 오류가 발생했습니다: ${queryError.message}`)
+          setError(`Reflection entries could not be loaded: ${queryError.message}`)
         }
         setPublicJournals([])
         return
@@ -88,7 +88,7 @@ export default function JournalPage() {
       setPublicJournals(data || [])
     } catch (err) {
       console.error('Error fetching public journals:', err)
-      setError('네트워크 오류가 발생했습니다. 다시 시도해주세요.')
+      setError('Network error. Please try again.')
       setPublicJournals([])
     } finally {
       setLoading(false)
@@ -112,231 +112,192 @@ export default function JournalPage() {
     }
   }
 
-  const calculateProgress = (current?: number, goal?: number) => {
-    if (!current || !goal || goal === 0) return 0
-    return Math.min((current / goal) * 100, 100)
-  }
-
-  const formatCurrency = (amount: number) => {
-    if (amount >= 100000000) return `${(amount / 100000000).toFixed(1)}억`
-    if (amount >= 10000) return `${(amount / 10000).toFixed(0)}만`
-    return amount.toLocaleString()
-  }
-
-  const isLoggedIn = user || isWalletConnected
-
   return (
-    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-white font-comic mb-4">
-            📝 도전일지
-          </h1>
-          <p className="text-gray-400 font-gaegu text-xl">
-            나만의 투자 목표를 기록하고, 다른 사람들의 도전기도 확인해보세요!
+    <main className="min-h-screen bg-space-deep px-4 py-16 sm:px-6 lg:px-8">
+      {/* glowing backgrounds */}
+      <div className="absolute left-1/10 top-1/4 w-96 h-96 rounded-full bg-cyan-500/[0.02] blur-3xl pointer-events-none" />
+      <div className="absolute right-1/10 top-1/2 w-96 h-96 rounded-full bg-purple-500/[0.02] blur-3xl pointer-events-none" />
+
+      <div className="mx-auto max-w-6xl relative z-10">
+        {/* Compliance Warning banner */}
+        <div className="mb-10 rounded-2xl border border-cyan-500/20 bg-cyan-950/10 p-5 backdrop-blur-md">
+          <p className="text-center text-xs sm:text-sm font-semibold leading-relaxed text-cyan-200">
+            ⚠️ 이 공간은 금융 리터러시와 의사결정 훈련을 위한 개인 학습 노트입니다. 투자 추천, 매매 신호, 수익 예측을 제공하지 않습니다.
           </p>
         </div>
 
-        {/* Two Main Cards */}
-        <div className="grid md:grid-cols-2 gap-6 mb-12">
-          {/* My Journal Card */}
-          <Link href={isLoggedIn ? "/journal/my" : "#"} onClick={(e) => {
-            if (!isLoggedIn) {
-              e.preventDefault()
-              alert('로그인이 필요합니다.')
-            }
-          }}>
-            <div className={`glass rounded-3xl p-8 h-full card-bounce border-2 ${
-              isLoggedIn ? 'border-cyan-500/30 hover:border-cyan-500/60' : 'border-gray-600/30'
-            } transition-all`}>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center">
-                  <PenTool className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-white font-comic">내 도전일지</h2>
-                  <p className="text-gray-400">나만 볼 수 있는 비공개 기록</p>
-                </div>
-              </div>
+        <section className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div>
+            <p className="text-sm font-medium uppercase tracking-[0.18em] text-cyan-200/70">
+              Thinking Lab & Research Notebook
+            </p>
+            <h1 className="mt-5 text-4xl font-extrabold tracking-normal text-white md:text-5xl leading-tight font-comic">
+              가설을 세우고, 기록하고,<br />의사결정을 훈련하는 실험실
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-8 text-gray-300">
+              뉴스, 차트, 매크로 데이터를 단순 소비하는 것에 머무르지 않고, 나만의 합리적인 의사결정 과정을 설계해 보세요. Thinking Lab은 배운 지식을 차분히 기록하고, 나만의 가설을 Assumption Tracker에 등록해 두며, 시간이 지난 후 실제 시장 데이터와 대조해 가설을 검증하고 다듬어가는 <strong>주도적 금융 학습 공간</strong>입니다.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href={user ? '/journal/my' : '#'}
+                onClick={(event) => {
+                  if (!user) {
+                    event.preventDefault()
+                    alert('로그인이 필요합니다.')
+                  }
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-6 py-3.5 text-sm font-semibold text-slate-950 transition hover:opacity-90 shadow-lg shadow-cyan-950/40"
+              >
+                나의 Research Notebook 열기
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/briefs"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 px-6 py-3.5 text-sm font-semibold text-gray-200 transition hover:border-cyan-200/40 hover:text-white"
+              >
+                오늘의 판단 브리프 읽기
+              </Link>
+            </div>
+          </div>
 
-              <div className="space-y-4 mb-6">
-                <div className="flex items-center gap-3 text-gray-300">
-                  <span className="text-2xl">🔒</span>
-                  <span>비공개로 안전하게 기록</span>
-                </div>
-                <div className="flex items-center gap-3 text-gray-300">
-                  <span className="text-2xl">🎯</span>
-                  <span>목표 금액 & 진행률 추적</span>
-                </div>
-                <div className="flex items-center gap-3 text-gray-300">
-                  <span className="text-2xl">📊</span>
-                  <span>나의 성장 기록 관리</span>
-                </div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 backdrop-blur-xl">
+            <div className="flex items-center gap-3 border-b border-white/10 pb-5">
+              <NotebookPen className="h-6 w-6 text-cyan-200" />
+              <div>
+                <p className="text-xs text-gray-400">Research & Hypothesis prompts</p>
+                <h2 className="text-lg font-bold text-white">사고와 의사결정을 자극하는 질문들</h2>
               </div>
+            </div>
+            <div className="mt-5 space-y-4">
+              {reflectionPrompts.map((prompt) => (
+                <div key={prompt} className="rounded-xl border border-white/10 bg-slate-950/35 p-4 transition-all hover:bg-slate-950/50">
+                  <p className="text-sm leading-6 text-gray-300">{prompt}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
-              {isLoggedIn ? (
-                <div className="flex items-center justify-between">
-                  <span className="text-cyan-400 font-comic">
-                    {myJournalCount > 0 ? `${myJournalCount}개의 도전 기록` : '첫 도전을 시작하세요!'}
-                  </span>
-                  <ChevronRight className="w-6 h-6 text-cyan-400" />
-                </div>
-              ) : (
-                <div className="text-center py-3 bg-gray-700/50 rounded-xl text-gray-400">
-                  로그인이 필요합니다
-                </div>
-              )}
+        <section className="mt-14 grid gap-5 md:grid-cols-2">
+          <Link
+            href={user ? (myJournalCount > 0 ? '/journal/my' : '/journal/my?action=new') : '#'}
+            onClick={(event) => {
+              if (!user) {
+                event.preventDefault()
+                alert('로그인이 필요합니다.')
+              }
+            }}
+            className="rounded-2xl border border-cyan-200/20 bg-slate-950/45 p-6 transition hover:-translate-y-0.5 hover:border-cyan-200/35 group relative overflow-hidden"
+          >
+            <div className="absolute inset-x-0 top-0 h-[2px] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 bg-gradient-to-r from-cyan-400 to-blue-500" />
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-200/10">
+                <PenTool className="h-5 w-5 text-cyan-100" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">나의 Research Notebook</h2>
+                <p className="mt-1 text-sm text-gray-400">내 가설 수립, 차트 관찰 기록, 리스크 점검 노트 작성 공간.</p>
+              </div>
+            </div>
+            <div className="mt-6 flex items-center justify-between text-sm text-cyan-100">
+              <span>{myJournalCount > 0 ? `${myJournalCount}개의 작성된 가설/기록` : '첫 번째 리서치 노트 작성하기'}</span>
+              <ChevronRight className="h-5 w-5" />
             </div>
           </Link>
 
-          {/* Public Challenges Card */}
-          <Link href="/journal/challenges">
-            <div className="glass rounded-3xl p-8 h-full card-bounce border-2 border-purple-500/30 hover:border-purple-500/60 transition-all">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center">
-                  <Users className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-white font-comic">도전기 게시판</h2>
-                  <p className="text-gray-400">다른 사람들의 도전 스토리</p>
-                </div>
-              </div>
 
-              <div className="space-y-4 mb-6">
-                <div className="flex items-center gap-3 text-gray-300">
-                  <span className="text-2xl">🌟</span>
-                  <span>성공 스토리 & 노하우 공유</span>
-                </div>
-                <div className="flex items-center gap-3 text-gray-300">
-                  <span className="text-2xl">💪</span>
-                  <span>서로 응원하며 동기부여</span>
-                </div>
-                <div className="flex items-center gap-3 text-gray-300">
-                  <span className="text-2xl">🏆</span>
-                  <span>인기 도전기 랭킹</span>
-                </div>
+          <Link
+            href="/journal/challenges"
+            className="rounded-2xl border border-white/10 bg-slate-950/45 p-6 transition hover:-translate-y-0.5 hover:border-cyan-200/25 group relative overflow-hidden"
+          >
+            <div className="absolute inset-x-0 top-0 h-[2px] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 bg-green-500" />
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.06]">
+                <Users className="h-5 w-5 text-cyan-100" />
               </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-purple-400 font-comic">
-                  {publicJournals.length > 0 ? `${publicJournals.length}개의 도전기` : '도전기를 확인하세요!'}
-                </span>
-                <ChevronRight className="w-6 h-6 text-purple-400" />
+              <div>
+                <h2 className="text-xl font-bold text-white group-hover:text-green-400 transition-colors">Community Research</h2>
+                <p className="mt-1 text-sm text-gray-400">합리적 동료들이 공개적으로 나누는 가설 및 리스크 리포트 탐독.</p>
               </div>
             </div>
+            <div className="mt-6 flex items-center justify-between text-sm text-gray-300">
+              <span>공유된 리서치 노트 둘러보기</span>
+              <ChevronRight className="h-5 w-5" />
+            </div>
           </Link>
-        </div>
+        </section>
 
-        {/* Recent Public Challenges Preview */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white font-comic flex items-center gap-2">
-              <TrendingUp className="w-6 h-6 text-purple-400" />
-              최근 도전기
-            </h2>
-            <Link href="/journal/challenges" className="text-purple-400 hover:text-purple-300 font-comic flex items-center gap-1">
-              전체보기 <ChevronRight className="w-4 h-4" />
+        <section className="mt-14">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="flex items-center gap-2 text-2xl font-bold text-white">
+                <BookOpen className="h-5 w-5 text-cyan-200" />
+                최신 공개 리서치 노트
+              </h2>
+              <p className="mt-2 text-sm text-gray-400">
+                공유된 리포트는 투자 선동이나 감정이 없으며, 투명한 가설 검증과 배움을 지향합니다.
+              </p>
+            </div>
+            <Link href="/journal/challenges" className="hidden text-sm text-cyan-100 hover:text-white sm:inline-flex">
+              전체 보기
             </Link>
           </div>
 
           {loading ? (
-            <div className="grid md:grid-cols-3 gap-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="glass rounded-2xl p-6 animate-pulse">
-                  <div className="h-4 bg-purple-500/20 rounded w-3/4 mb-4" />
-                  <div className="h-3 bg-purple-500/20 rounded w-full mb-2" />
-                  <div className="h-3 bg-purple-500/20 rounded w-2/3" />
-                </div>
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              {[...Array(3)].map((_, index) => (
+                <div key={index} className="h-44 animate-pulse rounded-lg bg-white/[0.05]" />
               ))}
             </div>
           ) : error ? (
-            <div className="glass rounded-2xl p-12 text-center border border-red-500/30">
-              <div className="text-4xl mb-4">⚠️</div>
-              <p className="text-red-400 font-gaegu text-xl mb-2">{error}</p>
-              <p className="text-gray-500 text-sm mb-4">
-                Supabase Studio에서 journal_entries 테이블을 생성해주세요.
-              </p>
-              <button
-                onClick={() => fetchPublicJournals()}
-                className="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 rounded-lg transition-colors"
-              >
-                다시 시도
-              </button>
+            <div className="mt-6 rounded-lg border border-amber-400/20 bg-amber-400/10 p-6">
+              <p className="text-sm text-amber-100">{sanitizeErrorMessage(error)}</p>
             </div>
           ) : publicJournals.length === 0 ? (
-            <div className="glass rounded-2xl p-12 text-center">
-              <BookOpen className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 font-gaegu text-xl">아직 공개된 도전기가 없어요</p>
-              <p className="text-gray-500 mt-2">첫 번째 도전기를 공유해보세요! 🚀</p>
+            <div className="mt-6 rounded-lg border border-white/10 bg-white/[0.035] p-8 text-center">
+              <Lock className="mx-auto h-8 w-8 text-gray-500" />
+              <p className="mt-4 text-gray-400">아직 공개된 리서치 노트가 없습니다.</p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-3 gap-4">
-              {publicJournals.slice(0, 3).map((journal) => {
-                const progress = calculateProgress(journal.current_amount, journal.goal_amount)
-
-                return (
-                  <Link key={journal.id} href={`/journal/challenges/${journal.id}`}>
-                    <div className="glass rounded-2xl p-6 h-full card-bounce hover:border-purple-500/30 border border-transparent transition-all">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                          {journal.author_name?.[0] || '?'}
-                        </div>
-                        <span className="text-gray-400 text-sm">{journal.author_name || '익명'}</span>
-                        {journal.status === 'completed' && (
-                          <span className="ml-auto text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">
-                            달성!
-                          </span>
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              {publicJournals.map((journal) => (
+                <Link key={journal.id} href={`/journal/challenges/${journal.id}`}>
+                  <article className="h-full rounded-2xl border border-white/10 bg-slate-950/45 p-5 transition hover:-translate-y-0.5 hover:border-cyan-200/25 flex flex-col justify-between">
+                    <div>
+                      <p className="text-xs text-gray-500">{new Date(journal.created_at).toLocaleDateString('ko-KR')}</p>
+                      <h3 className="mt-3 line-clamp-2 text-lg font-bold text-white">{journal.title}</h3>
+                      <p className="mt-3 line-clamp-3 text-sm leading-6 text-gray-400">
+                        {journal.content && journal.content.startsWith('{') ? (
+                          (() => {
+                            try {
+                              const parsed = JSON.parse(journal.content)
+                              return parsed.noteText || journal.content
+                            } catch {
+                              return journal.content
+                            }
+                          })()
+                        ) : (
+                          journal.content || 'No content'
                         )}
-                      </div>
-
-                      <h3 className="text-white font-bold mb-2 line-clamp-1">{journal.title}</h3>
-                      <p className="text-gray-400 text-sm mb-4 line-clamp-2">{journal.content}</p>
-
-                      {journal.goal_amount && (
-                        <div className="mb-4">
-                          <div className="flex justify-between text-xs text-gray-500 mb-1">
-                            <span>진행률</span>
-                            <span>{progress.toFixed(0)}%</span>
-                          </div>
-                          <div className="h-2 bg-space-800 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-4 text-gray-500 text-sm">
-                        <span className="flex items-center gap-1">
-                          <Heart className="w-4 h-4" />
-                          {journal.likes || 0}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Eye className="w-4 h-4" />
-                          {journal.views || 0}
-                        </span>
-                      </div>
+                      </p>
                     </div>
-                  </Link>
-                )
-              })}
+                    <div className="mt-5 flex items-center gap-4 border-t border-white/10 pt-4 text-xs text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <Heart className="h-3.5 w-3.5" />
+                        {journal.likes || 0}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Eye className="h-3.5 w-3.5" />
+                        {journal.views || 0}
+                      </span>
+                    </div>
+                  </article>
+                </Link>
+              ))}
             </div>
           )}
-        </div>
-
-        {/* Motivational Banner */}
-        <div className="glass rounded-3xl p-8 text-center bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border border-purple-500/20">
-          <div className="text-6xl mb-4">🦦💪</div>
-          <h3 className="text-2xl font-bold text-white font-comic mb-2">
-            "작은 시작이 큰 변화를 만듭니다"
-          </h3>
-          <p className="text-gray-400 font-gaegu text-lg">
-            오늘의 도전이 내일의 성공이 됩니다. 함께 우주로 떠나요! 🚀
-          </p>
-        </div>
+        </section>
       </div>
-    </div>
+    </main>
   )
 }

@@ -1,35 +1,37 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAccount, useDisconnect } from 'wagmi'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useState, useEffect } from 'react'
+// import { useAccount, useDisconnect } from 'wagmi'
+// import { useWallet } from '@solana/wallet-adapter-react'
 import { supabase } from '@/lib/supabase/client'
 import AuthModal from '@/components/auth/AuthModal'
 import Button from '@/components/ui/Button'
-import { ChevronDown } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 
 export default function Header() {
-  const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [authModalTab, setAuthModalTab] = useState<'web2' | 'web3'>('web2')
   const [user, setUser] = useState<{ email?: string; id?: string } | null>(null)
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
 
-  // Web3 wallet states
-  const { address: ethAddress, isConnected: isEthConnected } = useAccount()
-  const { disconnect: disconnectEth } = useDisconnect()
-  const { publicKey: solPublicKey, connected: isSolConnected, disconnect: disconnectSol } = useWallet()
+  // Web3 wallet states disabled for compliance review
+  const ethAddress = null
+  const isEthConnected = false
+  const disconnectEth = () => {}
+  const solPublicKey = null
+  const isSolConnected = false
+  const disconnectSol = () => {}
 
-  const isWalletConnected = isEthConnected || isSolConnected
-  const walletAddress = ethAddress || solPublicKey?.toBase58()
+  const isWalletConnected = false
+  const walletAddress: string | null = null
 
   useEffect(() => {
     // Check current user
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user)
+    }).catch(err => {
+      console.error('Error in Header getUser:', err)
     })
 
     // Listen for auth changes
@@ -109,36 +111,19 @@ export default function Header() {
     setIsAuthModalOpen(true)
   }
 
-  // 메뉴 순서: 홈, 시세, 레이더, 도전일지, NFT, 멤버십, 정보, 정착지
   const navLinks = [
-    { href: '/', label: '홈' },
-    { href: '/prices', label: '시세' },
-    { href: '/cosmic-radar', label: '레이더', icon: '💎', premium: true },
-    { href: '/journal', label: '도전일지', icon: '📝' },
-    {
-      label: 'NFT',
-      dropdown: [
-        { href: '/nft/auction', label: '옥션' },
-        { href: '/nft/randombox', label: '랜덤박스' },
-        { href: '/giving', label: '기부' },
-      ]
-    },
-    { href: '/membership', label: '멤버십' },
-    {
-      label: '정보',
-      dropdown: [
-        { href: '/news', label: '뉴스' },
-        { href: '/learn', label: '교육' },
-      ]
-    },
-    { href: '/roadmap', label: '정착지', icon: '🗺️' },
+    { href: '/briefs', label: '브리프' },
+    { href: '/learn', label: '학습' },
+    { href: '/news', label: '뉴스 읽기' },
+    { href: '/journal', label: 'Thinking Lab' },
+    { href: '/intelligence', label: '리서치 분석' },
+    { href: '/events', label: '학습 챌린지' },
+    { href: '/ai-search', label: 'AI 학습 검색' },
+    { href: '/dashboard', label: '대시보드' },
   ]
 
   // 표시할 주소/이메일 결정
   const getDisplayName = () => {
-    if (walletAddress) {
-      return `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
-    }
     if (user?.email) {
       // 이메일이 지갑 주소 형식이면 주소 표시
       if (user.email.includes('@wallet.')) {
@@ -154,66 +139,29 @@ export default function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 glass">
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-space-900/90 backdrop-blur-xl">
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl">🚀</span>
-              <span
-                className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-500 bg-clip-text text-transparent"
-                style={{ fontFamily: "'Comic Neue', cursive" }}
-              >
+            <Link href="/" className="flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-cyan-400/30 bg-cyan-400/10 text-sm font-bold text-cyan-200">
+                BF
+              </span>
+              <span className="text-xl font-semibold tracking-normal text-white">
                 BeyondFleet
               </span>
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-4">
-              {navLinks.map((link, index) => (
-                'dropdown' in link ? (
-                  // 드롭다운 메뉴
-                  <div
-                    key={link.label}
-                    className="relative group"
-                    onMouseEnter={() => setOpenDropdown(link.label)}
-                    onMouseLeave={() => setOpenDropdown(null)}
-                  >
-                    <button
-                      className="px-3 py-2 text-gray-300 hover:text-white hover:bg-purple-500/10 rounded-lg transition-all duration-200 text-sm flex items-center gap-1 font-comic"
-                    >
-                      {link.label}
-                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${openDropdown === link.label ? 'rotate-180' : ''}`} />
-                    </button>
-                    {openDropdown === link.label && link.dropdown && (
-                      <div className="absolute top-full left-0 pt-1">
-                        <div className="w-36 glass rounded-xl py-2 shadow-2xl border border-purple-500/30 backdrop-blur-xl">
-                          {link.dropdown.map((item) => (
-                            <Link
-                              key={item.href}
-                              href={item.href}
-                              className="block px-4 py-3 text-sm text-gray-300 hover:text-white hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-cyan-500/20 transition-all font-comic"
-                            >
-                              {item.label}
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  // 일반 링크
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`px-3 py-2 text-gray-300 hover:text-white hover:bg-purple-500/10 rounded-lg transition-all duration-200 text-sm font-comic ${
-                      link.icon ? 'flex items-center gap-1' : ''
-                    }`}
-                  >
-                    {link.icon && <span>{link.icon}</span>}
-                    {link.label}
-                  </Link>
-                )
+            <div className="hidden md:flex items-center space-x-1">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="px-3 py-2 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-200 text-sm"
+                >
+                  {link.label}
+                </Link>
               ))}
             </div>
 
@@ -241,69 +189,27 @@ export default function Header() {
             <button
               className="md:hidden text-gray-300 hover:text-white"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle navigation"
             >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                {isMobileMenuOpen ? (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                )}
-              </svg>
+              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
 
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
-            <div className="md:hidden py-4 border-t border-purple-500/20">
+            <div className="md:hidden py-4 border-t border-white/10">
               <div className="flex flex-col space-y-4">
                 {navLinks.map((link) => (
-                  'dropdown' in link && link.dropdown ? (
-                    // 드롭다운 메뉴 (모바일)
-                    <div key={link.label} className="space-y-2">
-                      <span className="text-gray-400 text-sm font-comic">{link.label}</span>
-                      <div className="pl-4 space-y-2">
-                        {link.dropdown.map((item) => (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            className="block text-gray-300 hover:text-white transition-colors duration-200 text-sm font-comic"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                          >
-                            {item.label}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className={`text-gray-300 hover:text-white transition-colors duration-200 text-sm font-comic ${
-                        link.icon ? 'flex items-center gap-1' : ''
-                      }`}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      {link.icon && <span>{link.icon}</span>}
-                      {link.label}
-                    </Link>
-                  )
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="text-gray-300 hover:text-white transition-colors duration-200 text-sm"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
                 ))}
-                <div className="flex flex-col space-y-2 pt-4 border-t border-purple-500/20">
+                <div className="flex flex-col space-y-2 pt-4 border-t border-white/10">
                   {user || isWalletConnected ? (
                     <>
                       <span className="text-cyan-400 text-sm font-mono">

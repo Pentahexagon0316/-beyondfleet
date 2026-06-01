@@ -7,17 +7,18 @@ import {
   Image,
   Gavel,
   Newspaper,
+  FileText,
   GraduationCap,
   Users,
-  LogOut,
   ChevronLeft,
 } from 'lucide-react'
 
 const menuItems = [
   { href: '/admin', icon: LayoutDashboard, label: '대시보드' },
-  { href: '/admin/nft', icon: Image, label: 'NFT 관리' },
-  { href: '/admin/auction', icon: Gavel, label: '옥션 관리' },
+  { href: '/admin/nft', icon: Image, label: 'Archive 관리' },
+  { href: '/admin/auction', icon: Gavel, label: 'Legacy Auction' },
   { href: '/admin/news', icon: Newspaper, label: '뉴스 관리' },
+  { href: '/admin/briefs', icon: FileText, label: 'Brief CMS' },
   { href: '/admin/learn', icon: GraduationCap, label: '교육 콘텐츠' },
   { href: '/admin/users', icon: Users, label: '회원 관리' },
 ]

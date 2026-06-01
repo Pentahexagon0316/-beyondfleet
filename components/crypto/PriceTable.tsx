@@ -15,7 +15,7 @@ export default function PriceTable({ coins }: PriceTableProps) {
         <thead>
           <tr className="text-left text-gray-400 text-sm border-b border-purple-500/20">
             <th className="pb-4 pr-4">#</th>
-            <th className="pb-4 pr-4">코인</th>
+            <th className="pb-4 pr-4">Asset</th>
             <th className="pb-4 pr-4 text-right">가격</th>
             <th className="pb-4 pr-4 text-right">24h</th>
             <th className="pb-4 pr-4 text-right hidden md:table-cell">시가총액</th>

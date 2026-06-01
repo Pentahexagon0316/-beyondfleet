@@ -1,130 +1,107 @@
 import Button from '@/components/ui/Button'
 
+const impactItems = [
+  {
+    title: '어린이 코딩 교육 지원',
+    amount: 'Learning grant',
+    date: '2024.12',
+    status: 'completed',
+    votes: 245,
+  },
+  {
+    title: '청년 창업 학습 기금',
+    amount: 'Community grant',
+    date: '2024.11',
+    status: 'completed',
+    votes: 189,
+  },
+]
+
 export default function GivingPage() {
-  const pastDonations = [
-    {
-      id: 1,
-      title: '어린이 코딩 교육 지원',
-      amount: '50 SOL',
-      date: '2024.12',
-      status: 'completed',
-      votes: 245,
-    },
-    {
-      id: 2,
-      title: '청년 창업 지원 기금',
-      amount: '30 SOL',
-      date: '2024.11',
-      status: 'completed',
-      votes: 189,
-    },
-  ]
-
   return (
-    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <span className="text-5xl mb-4 block">🎁</span>
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            기부 현황
-          </h1>
-          <p className="text-gray-400 max-w-2xl mx-auto">
-            BeyondFleet 멤버십 수익의 일부는 사회에 환원됩니다.
-            NFT 보유자의 투표로 기부처가 결정되며, 모든 내역은 투명하게 공개됩니다.
+    <main className="min-h-screen bg-space-deep px-4 py-16 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl">
+        <section className="max-w-3xl">
+          <p className="text-sm font-medium uppercase tracking-[0.18em] text-cyan-200/70">
+            Contribution
           </p>
-        </div>
+          <h1 className="mt-5 text-4xl font-semibold tracking-normal text-white md:text-6xl">
+            Growth should create useful contribution.
+          </h1>
+          <p className="mt-6 text-lg leading-8 text-gray-300">
+            BeyondFleet contribution is oriented around education, research participation,
+            mentorship, and transparent community standards. This layer should feel calm and
+            accountable, not like a reward market.
+          </p>
+        </section>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="glass rounded-xl p-6 text-center">
-            <p className="text-gray-400 text-sm mb-2">총 기부 풀</p>
-            <p className="text-3xl font-bold gradient-text">-- SOL</p>
-            <p className="text-gray-500 text-xs mt-2">≈ $--,---</p>
-          </div>
+        <section className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
+          {[
+            { label: 'Contribution pool', value: 'Transparent', detail: 'Prepared for public reporting' },
+            { label: 'Active proposals', value: '0', detail: 'Next proposal cycle pending' },
+            { label: 'Completed impact', value: '2', detail: 'Education-oriented contributions' },
+          ].map((stat) => (
+            <div key={stat.label} className="rounded-lg border border-white/10 bg-white/[0.035] p-6">
+              <p className="text-sm text-gray-400">{stat.label}</p>
+              <p className="mt-3 text-3xl font-semibold text-white">{stat.value}</p>
+              <p className="mt-2 text-xs text-gray-500">{stat.detail}</p>
+            </div>
+          ))}
+        </section>
 
-          <div className="glass rounded-xl p-6 text-center">
-            <p className="text-gray-400 text-sm mb-2">진행중인 투표</p>
-            <p className="text-3xl font-bold text-cyan-400">0건</p>
-            <p className="text-gray-500 text-xs mt-2">다음 투표 준비 중</p>
-          </div>
-
-          <div className="glass rounded-xl p-6 text-center">
-            <p className="text-gray-400 text-sm mb-2">완료된 기부</p>
-            <p className="text-3xl font-bold text-green-400">2건</p>
-            <p className="text-gray-500 text-xs mt-2">80 SOL 전달 완료</p>
-          </div>
-        </div>
-
-        {/* Current Voting - Empty State */}
-        <div className="mb-12">
-          <h2 className="text-xl font-bold text-white mb-6">🗳️ 진행중인 투표</h2>
-          <div className="glass rounded-xl p-8 text-center">
-            <span className="text-4xl mb-4 block">📭</span>
-            <p className="text-gray-400 mb-2">현재 진행중인 투표가 없습니다.</p>
-            <p className="text-gray-500 text-sm">
-              다음 투표가 시작되면 NFT 보유자에게 알림이 발송됩니다.
-            </p>
-          </div>
-        </div>
-
-        {/* Past Donations */}
-        <div className="mb-12">
-          <h2 className="text-xl font-bold text-white mb-6">📋 기부 내역</h2>
-          <div className="space-y-4">
-            {pastDonations.map((donation) => (
-              <div key={donation.id} className="glass rounded-xl p-6 card-hover">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <section className="mt-12">
+          <h2 className="text-xl font-semibold text-white">Contribution History</h2>
+          <div className="mt-5 space-y-4">
+            {impactItems.map((item) => (
+              <article key={item.title} className="rounded-lg border border-white/10 bg-slate-950/45 p-6">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-green-400/10 px-2 py-1 text-xs text-green-200">
                         완료
                       </span>
-                      <span className="text-gray-500 text-sm">{donation.date}</span>
+                      <span className="text-sm text-gray-500">{item.date}</span>
                     </div>
-                    <h3 className="text-lg font-medium text-white">{donation.title}</h3>
+                    <h3 className="mt-3 text-lg font-medium text-white">{item.title}</h3>
                   </div>
 
                   <div className="flex items-center gap-6">
-                    <div className="text-center">
-                      <p className="text-gray-500 text-xs">기부액</p>
-                      <p className="text-lg font-bold text-purple-400">{donation.amount}</p>
+                    <div>
+                      <p className="text-xs text-gray-500">Type</p>
+                      <p className="text-sm font-medium text-cyan-100">{item.amount}</p>
                     </div>
-                    <div className="text-center">
-                      <p className="text-gray-500 text-xs">참여 투표</p>
-                      <p className="text-lg font-bold text-cyan-400">{donation.votes}표</p>
+                    <div>
+                      <p className="text-xs text-gray-500">Community input</p>
+                      <p className="text-sm font-medium text-gray-200">{item.votes}명 참여</p>
                     </div>
                     <Button variant="ghost" size="sm">
                       상세 보기
                     </Button>
                   </div>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* How It Works */}
-        <div className="glass rounded-2xl p-8">
-          <h2 className="text-xl font-bold text-white mb-6 text-center">
-            💡 기부 시스템 작동 방식
-          </h2>
-          <div className="grid md:grid-cols-4 gap-6">
+        <section className="mt-12 rounded-lg border border-white/10 bg-white/[0.035] p-6 md:p-8">
+          <h2 className="text-xl font-semibold text-white">How contribution works</h2>
+          <div className="mt-6 grid gap-6 md:grid-cols-4">
             {[
-              { icon: '💰', title: '수익 적립', desc: 'NFT 판매 수익의 일부가 기부 풀에 적립됩니다.' },
-              { icon: '📝', title: '후보 제안', desc: '커뮤니티에서 기부 후보를 제안합니다.' },
-              { icon: '🗳️', title: '투표 진행', desc: 'NFT 보유자가 투표권으로 결정합니다.' },
-              { icon: '✅', title: '기부 실행', desc: '선정된 곳에 기부하고 증빙을 공개합니다.' },
-            ].map((step, i) => (
-              <div key={i} className="text-center">
-                <span className="text-3xl mb-3 block">{step.icon}</span>
-                <h3 className="text-white font-medium mb-2">{step.title}</h3>
-                <p className="text-gray-400 text-sm">{step.desc}</p>
+              { title: 'Pool', desc: 'A transparent pool is prepared from platform revenue.' },
+              { title: 'Proposal', desc: 'Members suggest education, research, or mentorship initiatives.' },
+              { title: 'Review', desc: 'The community reviews impact, clarity, and alignment.' },
+              { title: 'Report', desc: 'Selected contributions are recorded with public evidence.' },
+            ].map((step, index) => (
+              <div key={step.title}>
+                <span className="text-xs text-cyan-200/70">0{index + 1}</span>
+                <h3 className="mt-2 font-medium text-white">{step.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-gray-400">{step.desc}</p>
               </div>
             ))}
           </div>
-        </div>
+        </section>
       </div>
-    </div>
+    </main>
   )
 }

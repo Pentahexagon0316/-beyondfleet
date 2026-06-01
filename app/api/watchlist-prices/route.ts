@@ -8,9 +8,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ coins: [] })
   }
 
+  // Filter allowed educational coin IDs strictly
+  const allowed = ['bitcoin', 'ethereum', 'solana']
+  const filteredIds = ids
+    .split(',')
+    .filter((id) => allowed.includes(id.trim().toLowerCase()))
+    .join(',')
+
+  if (!filteredIds) {
+    return NextResponse.json({ coins: [] })
+  }
+
   try {
     const response = await fetch(
-      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&sparkline=false`,
+      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${filteredIds}&order=market_cap_desc&sparkline=false`,
       {
         headers: {
           'Accept': 'application/json',

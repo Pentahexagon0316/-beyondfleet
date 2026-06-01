@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { ArrowLeft, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, RefreshCw, Diamond, Lock } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
+import { MembershipTier } from '@/types'
+import { canAccessTier, normalizeMembershipTier } from '@/lib/membership/access'
 
 interface WhaleTransaction {
   id: string
@@ -21,10 +23,6 @@ interface WhaleTransaction {
   timestamp: string
   is_significant: boolean
 }
-
-type UserTier = 'cadet' | 'navigator' | 'pilot' | 'commander' | 'admiral'
-
-const TIER_HIERARCHY: UserTier[] = ['cadet', 'navigator', 'pilot', 'commander', 'admiral']
 
 const COIN_COLORS: Record<string, string> = {
   BTC: 'text-orange-400 bg-orange-500/20',
@@ -67,9 +65,9 @@ export default function WhalePage() {
 
   // User state
   const [user, setUser] = useState<User | null>(null)
-  const [userTier, setUserTier] = useState<UserTier>('cadet')
+  const [userTier, setUserTier] = useState<MembershipTier>('cadet')
 
-  const canAccess = TIER_HIERARCHY.indexOf(userTier) >= TIER_HIERARCHY.indexOf('pilot')
+  const canAccess = canAccessTier(userTier, 'pilot')
 
   useEffect(() => {
     async function checkUser() {
@@ -79,13 +77,11 @@ export default function WhalePage() {
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('nft_tier')
+          .select('membership_tier')
           .eq('id', user.id)
           .single()
 
-        if (profile?.nft_tier) {
-          setUserTier(profile.nft_tier as UserTier)
-        }
+        setUserTier(normalizeMembershipTier(profile?.membership_tier))
       }
     }
 
@@ -196,7 +192,7 @@ export default function WhalePage() {
               </ul>
             </div>
 
-            <Link href="/nft">
+            <Link href="/membership">
               <button className="px-8 py-4 bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-bold rounded-xl hover:opacity-90 transition-opacity">
                 멤버십 업그레이드
               </button>

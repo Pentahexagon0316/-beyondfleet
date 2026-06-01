@@ -1,114 +1,206 @@
-# 🚀 BeyondFleet
+# BeyondFleet
 
-> Beyond The Stars - 함께 가면 멀리 간다
+BeyondFleet is an AI-native macro learning and reflective intelligence platform.
 
-암호화폐 커뮤니티 플랫폼으로, 실시간 시세 확인, 교육 콘텐츠, NFT 멤버십, 투명한 기부 시스템을 제공합니다.
+The product is designed to help people build better judgment in an uncertain
+world through a simple daily loop:
 
-## ✨ 주요 기능
+```text
+Daily Brief -> Learning Path -> Reflection -> Return Tomorrow
+```
 
-- **실시간 시세**: CoinGecko API 기반 암호화폐 가격 정보
-- **NFT 멤버십**: 등급별 혜택과 투표권 제공
-- **교육 센터**: 초급부터 고급까지 단계별 학습
-- **기부 시스템**: 커뮤니티 투표로 결정하는 투명한 기부
+It is not a crypto hype platform, trading signal product, NFT marketplace, or
+casino-style dashboard. The experience should feel calm, editorial,
+trustworthy, and useful for long-term thinking.
 
-## 🛠️ 기술 스택
+## Product Principles
 
-- **Frontend**: Next.js 14, TypeScript, Tailwind CSS
-- **Backend**: Supabase (Auth, Database, Realtime)
-- **API**: CoinGecko API
-- **Deployment**: Vercel
+- Help users think better, not react faster.
+- Prioritize learning, reflection, risk awareness, and judgment.
+- Treat achievements as meaningful records of growth and contribution.
+- Keep the MVP focused on Daily Briefs, Learning Paths, Reflection, and return behavior.
+- Avoid speculative language, noisy trading UI, hype mechanics, and attention extraction.
 
-## 🚀 시작하기
+## Current Product Surfaces
 
-### 1. 의존성 설치
+- `app/page.tsx` - focused homepage for the daily judgment loop.
+- `app/briefs/page.tsx` - Daily Brief reader with reflection-oriented UX.
+- `app/admin/briefs/page.tsx` - Daily Brief CMS for editorial operations.
+- `app/learn/page.tsx` - track-based learning workspace.
+- `app/learn/[id]/page.tsx` - lesson reader and completion tracking.
+- `app/dashboard/page.tsx` - personal intelligence workspace.
+- `app/api/recommendations/route.ts` - lightweight personalization and recommendation API.
+- `lib/client/beyondfleet-sync.ts` - guest to authenticated persistence sync.
+- `lib/personalization/recommendation-engine.ts` - scoring and routing logic.
+- `supabase/migrations/` - database schema evolution.
+
+## Architecture Overview
+
+BeyondFleet is built with:
+
+- Next.js App Router
+- TypeScript
+- Tailwind CSS
+- Supabase Auth and Postgres
+- Vercel deployment
+
+Key data systems:
+
+- Daily Brief CMS and public reader
+- Reflection persistence
+- Saved assumptions
+- Reading completion tracking
+- Learning progress, XP, level, and streak state
+- Saved lessons and recent learning items
+- Recommendation and personalization scoring
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for system notes.
+See [docs/CONTENT_OPERATIONS.md](docs/CONTENT_OPERATIONS.md) for Daily Brief and reflection editorial standards.
+
+## Local Development
+
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-### 2. 환경 변수 설정
+Create local environment variables:
 
 ```bash
-cp .env.local.example .env.local
+cp .env.example .env.local
 ```
 
-`.env.local` 파일을 열고 Supabase 설정을 추가하세요:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-### 3. Supabase 설정
-
-Supabase 프로젝트에서 다음 테이블을 생성하세요:
-
-```sql
--- Users 확장 테이블
-create table public.profiles (
-  id uuid references auth.users primary key,
-  username text unique,
-  avatar_url text,
-  membership_tier text default 'cadet',
-  vote_power integer default 1,
-  created_at timestamp with time zone default timezone('utc'::text, now())
-);
-
--- RLS 정책 활성화
-alter table public.profiles enable row level security;
-
-create policy "Public profiles are viewable by everyone."
-  on profiles for select
-  using ( true );
-
-create policy "Users can update own profile."
-  on profiles for update
-  using ( auth.uid() = id );
-```
-
-### 4. 개발 서버 실행
+Run the development server:
 
 ```bash
 npm run dev
 ```
 
-[http://localhost:3000](http://localhost:3000)에서 확인하세요.
+Open:
 
-## 📁 프로젝트 구조
-
-```
-beyondfleet/
-├── app/                    # Next.js App Router
-│   ├── api/               # API Routes
-│   ├── auth/              # 인증 페이지
-│   ├── prices/            # 시세 페이지
-│   ├── membership/        # 멤버십 페이지
-│   ├── giving/            # 기부 페이지
-│   └── learn/             # 교육 페이지
-├── components/            # React 컴포넌트
-│   ├── ui/               # 공통 UI
-│   ├── layout/           # 레이아웃
-│   └── crypto/           # 암호화폐 관련
-├── lib/                   # 유틸리티
-│   ├── supabase/         # Supabase 클라이언트
-│   └── coingecko.ts      # API 함수
-└── types/                 # TypeScript 타입
+```text
+http://localhost:3000
 ```
 
-## 🎨 NFT 멤버십 등급
+Build locally before opening a pull request:
 
-| 등급 | 이름 | 투표권 | 주요 혜택 |
-|------|------|--------|-----------|
-| 🌱 | Cadet (훈련생) | 1표 | 기본 접근, 무료 |
-| ⭐ | Navigator (항해사) | 2표 | 주간 리포트 |
-| 🚀 | Pilot (조종사) | 3표 | 실시간 알림 |
-| 🌟 | Commander (사령관) | 5표 | 1:1 멘토링 |
-| 🌌 | Admiral (제독) | 10표 | VIP 모든 혜택 |
+```bash
+npm run build
+```
 
-## ⚠️ 면책조항
+Run repository safety checks:
 
-본 플랫폼은 정보 제공 목적이며, 투자 조언이 아닙니다. 모든 투자 결정과 책임은 본인에게 있습니다.
+```bash
+npm run check:repo
+```
 
-## 📄 라이선스
+## Environment Variables
 
-MIT License
+Never commit `.env.local`, production secrets, Supabase service role keys, or
+private API credentials.
+
+Required for normal app behavior:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SITE_URL`
+- `NEXT_PUBLIC_BASE_URL`
+
+Required for server-side admin, recommendations, and automation:
+
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `ANTHROPIC_API_KEY`
+- `CRON_SECRET`
+
+Optional integrations:
+
+- `WHALE_ALERT_API_KEY`
+- `RESEND_API_KEY`
+- `SOLANA_RPC_URL`
+- `TREASURY_WALLET`
+- `AUCTION_HOUSE_ADDRESS`
+- `SELLER_FEE_BASIS_POINTS`
+
+Use `.env.example` as the canonical template.
+
+## Supabase Requirements
+
+Apply migrations in order from `supabase/migrations/`.
+
+The current MVP depends on the 2026 migrations for:
+
+- Daily Brief CMS fields and publishing controls
+- Learning progress and stats
+- Personalization inputs
+- Reflection, assumption, and reading completion persistence
+
+Production databases must keep RLS policies enabled and should use the service
+role key only from trusted server routes, Supabase functions, Vercel
+environment variables, or secure automation.
+
+## Git Workflow
+
+The intended branch strategy is lightweight:
+
+```text
+main      -> production-ready stable branch
+develop   -> active integration branch
+feature/* -> isolated feature work
+```
+
+Commit messages should describe product evolution:
+
+```text
+feat: add reflection persistence sync
+refactor: migrate lesson progress to learning_progress
+fix: prevent scheduled briefs from recommendations
+style: reduce motion transitions globally
+docs: document repository workflow
+```
+
+See [docs/REPOSITORY_WORKFLOW.md](docs/REPOSITORY_WORKFLOW.md).
+
+## Deployment
+
+Expected production flow:
+
+```text
+GitHub push -> Vercel preview deploy -> review -> production deploy
+```
+
+Production deploys should come from `main`. Preview deploys can come from
+`develop` and `feature/*` branches.
+
+See [docs/OPERATIONS.md](docs/OPERATIONS.md) for release, rollback, and
+environment safety notes.
+
+## AI-Assisted Development
+
+This repository should remain friendly to Codex, ChatGPT, Claude, and future AI
+development agents:
+
+- Keep feature code modular and predictably named.
+- Prefer explicit types and stable data contracts.
+- Avoid hidden coupling between UI, localStorage, and Supabase writes.
+- Document strategic systems before they become hard to change.
+- Keep work scoped to the product loop unless a broader change is intentional.
+
+See [docs/AI_DEVELOPMENT.md](docs/AI_DEVELOPMENT.md).
+
+## Product Safety Checklist
+
+Before shipping user-facing changes, verify:
+
+- Scheduled briefs are hidden until `scheduled_for`.
+- Premium fields are gated consistently.
+- Guest data survives login transition.
+- Learning progress updates dashboard state.
+- Reflection and saved assumptions persist.
+- Missing Supabase data falls back gracefully.
+- Reduced-motion users are not exposed to heavy animation.
+- Mobile reading and dashboard layouts remain comfortable.
+
+## License
+
+Private product repository unless a separate license is added.

@@ -14,8 +14,7 @@ import {
 } from 'recharts'
 import { useBinanceWebSocket, getBinanceSymbol } from '@/lib/hooks/useBinanceWebSocket'
 import { createClient } from '@/lib/supabase/client'
-import { useAccount } from 'wagmi'
-import { useWallet } from '@solana/wallet-adapter-react'
+
 import { sanitizeHTML } from '@/lib/security/sanitize'
 
 interface CoinData {
@@ -63,11 +62,9 @@ export default function CoinDetailPage({ params }: { params: Promise<{ id: strin
   const [priceFlash, setPriceFlash] = useState<'up' | 'down' | null>(null)
   const prevPriceRef = useRef<number | null>(null)
 
-  // Web3 wallet states
-  const { address: ethAddress, isConnected: isEthConnected } = useAccount()
-  const { publicKey: solPublicKey, connected: isSolConnected } = useWallet()
-  const isWalletConnected = isEthConnected || isSolConnected
-  const walletAddress = ethAddress || solPublicKey?.toBase58() || null
+  // Web3 wallet states disabled
+  const isWalletConnected = false
+  const walletAddress = null as any
 
   // Binance WebSocket for real-time price
   const { prices: binancePrices, isConnected: wsConnected } = useBinanceWebSocket([id])
@@ -377,7 +374,7 @@ export default function CoinDetailPage({ params }: { params: Promise<{ id: strin
                 rel="noopener noreferrer"
                 className="px-3 py-2 bg-space-800/50 rounded-lg text-gray-400 hover:text-white text-sm transition-colors"
               >
-                𝕏 Twitter
+                Social source
               </a>
             )}
           </div>

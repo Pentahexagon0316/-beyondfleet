@@ -11,12 +11,11 @@ export async function GET(request: NextRequest) {
   const sortOrder = searchParams.get('sort_order') || 'desc'
 
   try {
-    // Fetch 100 coins from CoinGecko for metadata
+    // Fetch strictly allowed educational coins from CoinGecko for metadata
     const url = new URL(`${COINGECKO_API_BASE}/coins/markets`)
     url.searchParams.set('vs_currency', 'usd')
+    url.searchParams.set('ids', 'bitcoin,ethereum,solana')
     url.searchParams.set('order', 'market_cap_desc')
-    url.searchParams.set('per_page', '100')
-    url.searchParams.set('page', '1')
     url.searchParams.set('sparkline', 'false')
     url.searchParams.set('price_change_percentage', '24h')
 

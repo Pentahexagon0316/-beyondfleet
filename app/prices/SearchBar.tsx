@@ -32,7 +32,7 @@ export default function SearchBar({ initialValue }: SearchBarProps) {
     <div className="relative">
       <Input
         type="text"
-        placeholder="코인 이름 또는 심볼로 검색..."
+        placeholder="Asset name or symbol..."
         value={value}
         onChange={(e) => handleSearch(e.target.value)}
         icon={

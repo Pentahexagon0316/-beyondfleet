@@ -92,7 +92,7 @@ export default function LivePriceSection({ initialCoins }: LivePriceSectionProps
           <div>
             <div className="flex items-center gap-3 mb-2">
               <h2 className="text-2xl md:text-3xl font-bold text-white">
-                실시간 시세
+                Market Context
               </h2>
               {wsConnected && (
                 <span className="flex items-center gap-1.5 px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full text-green-400 text-xs">
@@ -175,7 +175,7 @@ export default function LivePriceSection({ initialCoins }: LivePriceSectionProps
           </div>
         ) : (
           <div className="glass rounded-xl p-8 text-center">
-            <p className="text-gray-400">시세 데이터를 불러오는 중...</p>
+            <p className="text-gray-400">시장 데이터를 불러오는 중...</p>
           </div>
         )}
       </div>

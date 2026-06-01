@@ -1,12 +1,16 @@
 import { http, createConfig } from 'wagmi'
 import { mainnet, polygon, arbitrum, optimism } from 'wagmi/chains'
-import { getDefaultConfig } from '@rainbow-me/rainbowkit'
+import { injected } from '@wagmi/core'
 
-// RainbowKit + Wagmi config for Ethereum
-export const wagmiConfig = getDefaultConfig({
-  appName: 'BeyondFleet',
-  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'demo',
-  chains: [mainnet, polygon, arbitrum, optimism],
+const chains = [mainnet, polygon, arbitrum, optimism] as const
+
+export const wagmiConfig = createConfig({
+  chains,
+  connectors: [
+    injected({
+      target: 'metaMask',
+    }),
+  ],
   transports: {
     [mainnet.id]: http(),
     [polygon.id]: http(),

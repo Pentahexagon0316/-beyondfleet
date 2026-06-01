@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit, getClientIP, RATE_LIMITS } from '@/lib/security/rate-limiter'
 import { generateCSRFToken, CSRF_TOKEN_NAME, CSRF_HEADER_NAME } from '@/lib/security/csrf'
+import { isUpstashRateLimitConfigured, limitRequest } from '@/lib/rate-limit'
+import { applySecurityHeaders } from './middleware/security-headers'
 
-export function middleware(request: NextRequest) {
-  const response = NextResponse.next()
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
+
+  // Block access to Web3 / NFT routes in production/active state
+  if (
+    pathname.startsWith('/nft') || 
+    pathname.startsWith('/api/nft') || 
+    pathname.startsWith('/api/solana')
+  ) {
+    return new NextResponse('Not Found', { status: 404 })
+  }
+
+  const response = NextResponse.next()
 
   // Apply security headers to all responses
   applySecurityHeaders(response)
@@ -16,30 +28,35 @@ export function middleware(request: NextRequest) {
     const clientIP = getClientIP(request)
     const rateLimitKey = `${clientIP}:${pathname.split('/').slice(0, 4).join('/')}`
 
-    const result = rateLimit(rateLimitKey, rateLimitConfig)
+    const result = isUpstashRateLimitConfigured()
+      ? await limitRequest(rateLimitKey)
+      : rateLimit(rateLimitKey, rateLimitConfig)
+    const limit = 'limit' in result ? result.limit : rateLimitConfig.maxRequests
+    const resetTime = 'reset' in result ? Number(result.reset) : result.resetTime
+    const retryAfter = Math.max(1, Math.ceil((resetTime - Date.now()) / 1000))
 
     if (!result.success) {
       return NextResponse.json(
         {
           error: 'Too many requests',
-          retryAfter: result.retryAfter
+          retryAfter
         },
         {
           status: 429,
           headers: {
-            'Retry-After': String(result.retryAfter),
-            'X-RateLimit-Limit': String(rateLimitConfig.maxRequests),
+            'Retry-After': String(retryAfter),
+            'X-RateLimit-Limit': String(limit),
             'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': String(Math.ceil(result.resetTime / 1000))
+            'X-RateLimit-Reset': String(Math.ceil(resetTime / 1000))
           }
         }
       )
     }
 
     // Add rate limit headers to response
-    response.headers.set('X-RateLimit-Limit', String(rateLimitConfig.maxRequests))
+    response.headers.set('X-RateLimit-Limit', String(limit))
     response.headers.set('X-RateLimit-Remaining', String(result.remaining))
-    response.headers.set('X-RateLimit-Reset', String(Math.ceil(result.resetTime / 1000)))
+    response.headers.set('X-RateLimit-Reset', String(Math.ceil(resetTime / 1000)))
 
     // CSRF validation for mutating requests (POST, PUT, DELETE, PATCH)
     const mutatingMethods = ['POST', 'PUT', 'DELETE', 'PATCH']
@@ -91,49 +108,6 @@ function getRateLimitConfig(pathname: string) {
     return RATE_LIMITS.cron
   }
   return RATE_LIMITS.default
-}
-
-function applySecurityHeaders(response: NextResponse) {
-  // Prevent clickjacking
-  response.headers.set('X-Frame-Options', 'DENY')
-
-  // Prevent MIME type sniffing
-  response.headers.set('X-Content-Type-Options', 'nosniff')
-
-  // XSS Protection (legacy, but good for older browsers)
-  response.headers.set('X-XSS-Protection', '1; mode=block')
-
-  // Referrer Policy
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
-
-  // Content Security Policy
-  const cspDirectives = [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // Next.js needs unsafe-inline/eval
-    "style-src 'self' 'unsafe-inline'", // Tailwind CSS needs unsafe-inline
-    "img-src 'self' data: https: blob:",
-    "font-src 'self' data:",
-    "connect-src 'self' https://*.supabase.co https://api.coingecko.com https://min-api.cryptocompare.com https://api.whale-alert.io https://api.anthropic.com wss://*.supabase.co",
-    "frame-ancestors 'none'",
-    "base-uri 'self'",
-    "form-action 'self'"
-  ].join('; ')
-
-  response.headers.set('Content-Security-Policy', cspDirectives)
-
-  // Permissions Policy
-  response.headers.set(
-    'Permissions-Policy',
-    'camera=(), microphone=(), geolocation=(), interest-cohort=()'
-  )
-
-  // Strict Transport Security (only in production)
-  if (process.env.NODE_ENV === 'production') {
-    response.headers.set(
-      'Strict-Transport-Security',
-      'max-age=31536000; includeSubDomains; preload'
-    )
-  }
 }
 
 // Constant-time string comparison to prevent timing attacks

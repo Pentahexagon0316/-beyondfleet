@@ -7,6 +7,8 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
 import { Lock, Diamond, X, Crown, Rocket, Star, Shield, Anchor } from 'lucide-react'
+import { MembershipTier } from '@/types'
+import { canAccessTier, normalizeMembershipTier } from '@/lib/membership/access'
 
 interface NewsItem {
   id: string
@@ -20,20 +22,31 @@ interface NewsItem {
   is_premium: boolean
   premium_category: 'institution' | 'whale' | 'analysis' | 'prediction' | 'etf' | null
   required_tier: 'navigator' | 'pilot' | 'commander' | 'admiral' | null
+  ai_summary?: {
+    headline: string
+    why_it_matters: string
+    key_point: string
+  } | null
+  related_lesson?: {
+    id: string
+    title: string
+  } | null
 }
 
-type Category = 'all' | 'bitcoin' | 'ethereum' | 'defi' | 'nft' | 'regulation'
+type Category = 'all' | 'macro' | 'ai' | 'technology' | 'policy' | 'markets' | 'consumer' | 'energy' | 'crypto'
 type PremiumFilter = 'all' | 'free' | 'premium'
 type PremiumCategory = 'all' | 'institution' | 'whale' | 'analysis' | 'prediction' | 'etf'
-type UserTier = 'cadet' | 'navigator' | 'pilot' | 'commander' | 'admiral'
 
 const CATEGORIES: { label: string; value: Category; icon: string }[] = [
   { label: '전체', value: 'all', icon: '📰' },
-  { label: 'Bitcoin', value: 'bitcoin', icon: '₿' },
-  { label: 'Ethereum', value: 'ethereum', icon: '⟠' },
-  { label: 'DeFi', value: 'defi', icon: '🏦' },
-  { label: 'NFT', value: 'nft', icon: '🎨' },
-  { label: '규제/정책', value: 'regulation', icon: '⚖️' },
+  { label: 'Macro', value: 'macro', icon: '🌍' },
+  { label: 'AI', value: 'ai', icon: '🤖' },
+  { label: 'Technology', value: 'technology', icon: '💻' },
+  { label: 'Policy', value: 'policy', icon: '⚖️' },
+  { label: 'Markets', value: 'markets', icon: '📈' },
+  { label: 'Consumer', value: 'consumer', icon: '🛍️' },
+  { label: 'Energy', value: 'energy', icon: '⚡' },
+  { label: 'Crypto', value: 'crypto', icon: '₿' },
 ]
 
 const PREMIUM_CATEGORIES: { label: string; value: PremiumCategory; icon: string }[] = [
@@ -45,14 +58,35 @@ const PREMIUM_CATEGORIES: { label: string; value: PremiumCategory; icon: string 
   { label: 'ETF', value: 'etf', icon: '💼' },
 ]
 
-const TIER_HIERARCHY: UserTier[] = ['cadet', 'navigator', 'pilot', 'commander', 'admiral']
-
-const TIER_INFO: Record<UserTier, { label: string; icon: React.ReactNode; color: string }> = {
+const TIER_INFO: Record<MembershipTier, { label: string; icon: React.ReactNode; color: string }> = {
   cadet: { label: 'Cadet', icon: <Anchor className="w-4 h-4" />, color: 'text-gray-400' },
   navigator: { label: 'Navigator', icon: <Star className="w-4 h-4" />, color: 'text-blue-400' },
   pilot: { label: 'Pilot', icon: <Rocket className="w-4 h-4" />, color: 'text-purple-400' },
   commander: { label: 'Commander', icon: <Shield className="w-4 h-4" />, color: 'text-yellow-400' },
   admiral: { label: 'Admiral', icon: <Crown className="w-4 h-4" />, color: 'text-amber-500' },
+}
+
+const getFallbackImage = (category: string): string => {
+  switch (category) {
+    case 'macro':
+      return 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=600&auto=format&fit=crop&q=60' // 네온 금융 차트
+    case 'ai':
+      return 'https://images.unsplash.com/photo-1677442136019-21780efad99a?w=600&auto=format&fit=crop&q=60' // AI 일러스트
+    case 'technology':
+      return 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&auto=format&fit=crop&q=60' // IT 부품/회로
+    case 'policy':
+      return 'https://images.unsplash.com/photo-1450133064473-71024230f91b?w=600&auto=format&fit=crop&q=60' // 의사봉/정책
+    case 'markets':
+      return 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=600&auto=format&fit=crop&q=60' // 주식 시장 그래프
+    case 'consumer':
+      return 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&auto=format&fit=crop&q=60' // 소비/비즈니스
+    case 'energy':
+      return 'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=600&auto=format&fit=crop&q=60' // 친환경 에너지 발전기
+    case 'crypto':
+      return 'https://images.unsplash.com/photo-1621761191319-c6fb62004040?w=600&auto=format&fit=crop&q=60' // 미니멀 골드 비트코인
+    default:
+      return 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=600&auto=format&fit=crop&q=60' // 미래적 데이터 우주 공간
+  }
 }
 
 function NewsContent() {
@@ -61,6 +95,7 @@ function NewsContent() {
 
   const [news, setNews] = useState<NewsItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [category, setCategory] = useState<Category>(
     (searchParams.get('category') as Category) || 'all'
   )
@@ -75,56 +110,52 @@ function NewsContent() {
 
   // User state
   const [user, setUser] = useState<User | null>(null)
-  const [userTier, setUserTier] = useState<UserTier>('cadet')
+  const [userTier, setUserTier] = useState<MembershipTier>('cadet')
 
   useEffect(() => {
     // Check user and tier
     async function checkUser() {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        setUser(user)
 
-      if (user) {
-        // Fetch user's NFT membership tier
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('nft_tier')
-          .eq('id', user.id)
-          .single()
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('membership_tier')
+            .eq('id', user.id)
+            .single()
 
-        if (profile?.nft_tier) {
-          setUserTier(profile.nft_tier as UserTier)
+          setUserTier(normalizeMembershipTier(profile?.membership_tier))
         }
+      } catch (err) {
+        console.error('Failed to check user in news page:', err)
       }
     }
 
     checkUser()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('nft_tier')
-          .eq('id', session.user.id)
-          .single()
+      try {
+        setUser(session?.user ?? null)
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('membership_tier')
+            .eq('id', session.user.id)
+            .single()
 
-        if (profile?.nft_tier) {
-          setUserTier(profile.nft_tier as UserTier)
+          setUserTier(normalizeMembershipTier(profile?.membership_tier))
+        } else {
+          setUserTier('cadet')
         }
-      } else {
-        setUserTier('cadet')
+      } catch (err) {
+        console.error('Auth state change error in news page:', err)
       }
     })
 
     return () => subscription.unsubscribe()
   }, [])
-
-  const canAccessTier = (requiredTier: UserTier | null): boolean => {
-    if (!requiredTier) return true
-    const userIndex = TIER_HIERARCHY.indexOf(userTier)
-    const requiredIndex = TIER_HIERARCHY.indexOf(requiredTier)
-    return userIndex >= requiredIndex
-  }
 
   const canAccessPremiumCategory = (category: string | null): boolean => {
     if (!category) return true
@@ -133,7 +164,7 @@ function NewsContent() {
     if (userTier === 'navigator' && category === 'institution') return true
 
     // Pilot and above can access all premium
-    if (TIER_HIERARCHY.indexOf(userTier) >= TIER_HIERARCHY.indexOf('pilot')) return true
+    if (canAccessTier(userTier, 'pilot')) return true
 
     return false
   }
@@ -142,7 +173,7 @@ function NewsContent() {
     if (!newsItem.is_premium) return true
 
     // Check tier requirement
-    if (newsItem.required_tier && !canAccessTier(newsItem.required_tier as UserTier)) {
+    if (newsItem.required_tier && !canAccessTier(userTier, newsItem.required_tier)) {
       return false
     }
 
@@ -156,27 +187,37 @@ function NewsContent() {
 
   const fetchNews = useCallback(async () => {
     setLoading(true)
+    setError(null)
     try {
       const params = new URLSearchParams({
         category,
         page: currentPage.toString(),
         premium_filter: premiumFilter,
         premium_category: premiumCategory,
+        tier: userTier,
       })
 
       const res = await fetch(`/api/news?${params}`)
+      if (!res.ok) {
+        throw new Error('Server returned an error')
+      }
       const data = await res.json()
 
-      if (data.news) {
+      if (data && data.news) {
         setNews(data.news)
         setTotalPages(data.total_pages || 1)
+      } else {
+        throw new Error('Invalid response structure')
       }
     } catch (error) {
       console.error('Error fetching news:', error)
+      setError('뉴스를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.')
+      setNews([])
+      setTotalPages(1)
     } finally {
       setLoading(false)
     }
-  }, [category, currentPage, premiumFilter, premiumCategory])
+  }, [category, currentPage, premiumFilter, premiumCategory, userTier])
 
   useEffect(() => {
     fetchNews()
@@ -203,19 +244,14 @@ function NewsContent() {
   }
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return ''
     const date = new Date(dateString)
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const days = Math.floor(hours / 24)
-
-    if (hours < 1) return '방금 전'
-    if (hours < 24) return `${hours}시간 전`
-    if (days < 7) return `${days}일 전`
     return date.toLocaleDateString('ko-KR', {
       year: 'numeric',
-      month: 'short',
+      month: 'long',
       day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     })
   }
 
@@ -226,16 +262,22 @@ function NewsContent() {
 
   const getCategoryColor = (cat: string) => {
     switch (cat) {
-      case 'bitcoin':
-        return 'bg-orange-500/20 text-orange-400 border-orange-500/30'
-      case 'ethereum':
+      case 'macro':
+        return 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
+      case 'ai':
+        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+      case 'technology':
         return 'bg-purple-500/20 text-purple-400 border-purple-500/30'
-      case 'defi':
-        return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
-      case 'nft':
-        return 'bg-pink-500/20 text-pink-400 border-pink-500/30'
-      case 'regulation':
+      case 'policy':
         return 'bg-red-500/20 text-red-400 border-red-500/30'
+      case 'markets':
+        return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+      case 'consumer':
+        return 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+      case 'energy':
+        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+      case 'crypto':
+        return 'bg-orange-500/20 text-orange-400 border-orange-500/30'
       default:
         return 'bg-gray-500/20 text-gray-400 border-gray-500/30'
     }
@@ -259,10 +301,10 @@ function NewsContent() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-            암호화폐 뉴스
+            시장과 경제 뉴스 읽기
           </h1>
           <p className="text-gray-400">
-            실시간 암호화폐 뉴스와 AI 요약을 확인하세요
+            실시간 시장 경제 뉴스와 AI 학습 요약을 확인하세요
           </p>
 
           {/* User Tier Badge */}
@@ -366,6 +408,16 @@ function NewsContent() {
               </div>
             ))}
           </div>
+        ) : error ? (
+          <div className="glass rounded-xl p-12 text-center border border-red-500/20 bg-red-500/5">
+            <p className="text-red-400 text-lg mb-2">{error}</p>
+            <button
+              onClick={() => fetchNews()}
+              className="mt-4 px-4 py-2 bg-gradient-to-r from-purple-600 to-cyan-500 text-white rounded-lg hover:opacity-90 transition-opacity"
+            >
+              다시 시도
+            </button>
+          </div>
         ) : news.length === 0 ? (
           <div className="glass rounded-xl p-12 text-center">
             <p className="text-gray-400 text-lg">해당 카테고리의 뉴스가 없습니다.</p>
@@ -391,7 +443,7 @@ function NewsContent() {
                     <div className="absolute inset-0 z-20 bg-space-900/80 backdrop-blur-sm flex flex-col items-center justify-center">
                       <Lock className="w-12 h-12 text-amber-500 mb-3" />
                       <p className="text-amber-400 font-bold text-center px-4">
-                        {item.required_tier ? TIER_INFO[item.required_tier as UserTier]?.label : 'Navigator'} 이상
+                        {item.required_tier ? TIER_INFO[item.required_tier]?.label : 'Navigator'} 이상
                         <br />
                         멤버십이 필요합니다
                       </p>
@@ -400,22 +452,17 @@ function NewsContent() {
                       </button>
                     </div>
                   )}
-
                   {/* Image */}
-                  <div className={`relative h-48 bg-space-800/50 ${item.is_premium && !hasAccess ? 'blur-sm' : ''}`}>
-                    {item.image_url ? (
-                      <Image
-                        src={item.image_url}
-                        alt={item.title}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <span className="text-4xl opacity-50">📰</span>
-                      </div>
-                    )}
+                  <div className={`relative h-48 bg-space-800/50 overflow-hidden ${item.is_premium && !hasAccess ? 'blur-sm' : ''}`}>
+                    <img
+                      src={item.image_url || getFallbackImage(item.category)}
+                      alt={item.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = getFallbackImage(item.category)
+                      }}
+                    />
 
                     {/* Category Badge */}
                     <div className="absolute top-3 left-3 flex gap-2">
@@ -449,12 +496,18 @@ function NewsContent() {
                           {getPremiumCategoryLabel(item.premium_category)}
                         </span>
                       )}
-                      <span className="px-2 py-0.5 bg-cyan-500/20 border border-cyan-500/30 rounded-full text-cyan-400 text-xs flex items-center gap-1">
-                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                        </svg>
-                        AI 요약
-                      </span>
+                      {item.ai_summary ? (
+                        <span className="px-2 py-0.5 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-400 text-xs flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                          </svg>
+                          AI 분석 완료
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 bg-gray-500/20 border border-gray-500/30 rounded-full text-gray-500 text-xs">
+                          기본 요약
+                        </span>
+                      )}
                     </div>
 
                     {/* Title */}
@@ -462,10 +515,81 @@ function NewsContent() {
                       {item.title}
                     </h3>
 
-                    {/* Summary */}
-                    <p className="text-gray-400 text-sm line-clamp-3 mb-4">
-                      {item.summary}
-                    </p>
+                    {/* AI Summary (모든 사용자에게 제공) */}
+                    {item.ai_summary && hasAccess ? (
+                      <div className="space-y-2 mb-3 bg-space-950/40 p-3 rounded-lg border border-space-800/40 text-xs">
+                        <div>
+                          <span className="text-cyan-300 font-semibold flex items-center gap-1 mb-0.5">
+                            💡 무슨 일이 있었나?
+                          </span>
+                          <p className="text-gray-200 leading-relaxed pl-4 mb-2">
+                            {item.ai_summary.headline}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-emerald-400 font-semibold flex items-center gap-1 mb-0.5">
+                            📢 왜 중요한가?
+                          </span>
+                          <p className="text-gray-300 leading-relaxed pl-4 mb-2">
+                            {item.ai_summary.why_it_matters}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-amber-400 font-semibold flex items-center gap-1 mb-0.5">
+                            🎯 생각해볼 질문
+                          </span>
+                          <p className="text-amber-300/90 leading-relaxed pl-4">
+                            {item.ai_summary.key_point}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-gray-400 text-sm line-clamp-3 mb-2">
+                        {item.summary}
+                      </p>
+                    )}
+
+                    {/* Related Lesson */}
+                    {item.related_lesson && (
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          window.location.href = `/learn/${item.related_lesson!.id}`
+                        }}
+                        className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-emerald-500/[0.06] border border-emerald-500/15 hover:bg-emerald-500/10 transition cursor-pointer"
+                      >
+                        <span className="text-emerald-400 text-xs">📚</span>
+                        <span className="text-emerald-300/80 text-xs hover:text-emerald-200 transition">
+                          관련 학습: {item.related_lesson.title}
+                        </span>
+                      </div>
+                    )}
+                    {/* Write Note Button */}
+                    {hasAccess && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          const queryParams = new URLSearchParams({
+                            action: 'new',
+                            template: 'news',
+                            newsId: item.id,
+                            title: item.title,
+                            source: item.source,
+                            publishedAt: item.published_at,
+                            category: item.category,
+                            url: item.source_url
+                          })
+                          router.push(`/journal/my?${queryParams.toString()}`)
+                        }}
+                        className="w-full mb-3 py-2 px-3 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 border border-cyan-500/20 hover:border-cyan-500/40 transition-all"
+                      >
+                        ✍️ 이 뉴스로 노트 작성하기
+                      </button>
+                    )}
 
                     {/* Footer */}
                     <div className="flex items-center justify-between text-xs text-gray-500">
@@ -554,7 +678,7 @@ function NewsContent() {
                 이 콘텐츠는{' '}
                 <span className="text-amber-400 font-bold">
                   {selectedNews.required_tier
-                    ? TIER_INFO[selectedNews.required_tier as UserTier]?.label
+                    ? TIER_INFO[selectedNews.required_tier]?.label
                     : 'Navigator'}
                 </span>{' '}
                 이상 멤버십이 필요합니다.
@@ -615,7 +739,7 @@ function NewsContent() {
                 >
                   나중에
                 </button>
-                <Link href="/nft" className="flex-1">
+                <Link href="/membership" className="flex-1">
                   <button className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-black font-bold hover:opacity-90 transition-opacity">
                     멤버십 보기
                   </button>

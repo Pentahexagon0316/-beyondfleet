@@ -124,10 +124,6 @@ export default function PrivacyPage() {
                         <td className="py-2">이메일 주소</td>
                         <td className="py-2">회원가입</td>
                       </tr>
-                      <tr className="border-b border-purple-500/10">
-                        <td className="py-2">암호화폐 지갑 주소</td>
-                        <td className="py-2">지갑 연결</td>
-                      </tr>
                       <tr>
                         <td className="py-2">비밀번호 (암호화 저장)</td>
                         <td className="py-2">회원가입</td>
@@ -170,9 +166,9 @@ export default function PrivacyPage() {
                   <div className="bg-space-800 rounded-xl p-4">
                     <h4 className="text-purple-400 font-medium mb-2">멤버십 관리</h4>
                     <ul className="text-gray-300 text-sm space-y-1">
-                      <li>• NFT 멤버십 등급 관리</li>
+                      <li>• 개인 프리미엄 멤버십 등급 관리</li>
                       <li>• 멤버십 혜택 제공</li>
-                      <li>• 투표권 관리</li>
+                      <li>• 피드백 한도 관리</li>
                     </ul>
                   </div>
                   <div className="bg-space-800 rounded-xl p-4">

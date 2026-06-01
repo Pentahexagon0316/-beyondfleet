@@ -97,56 +97,72 @@ export async function POST(request: NextRequest) {
       .eq(walletField, walletAddress)
       .single()
 
+    let targetEmail = ''
+    let userId = ''
+    let isNew = false
+
     if (existingProfile) {
-      // Wallet already linked - sign in the user
-      return NextResponse.json({
-        success: true,
-        userId: existingProfile.id,
-        isNew: false,
-        message: '로그인 성공!',
+      targetEmail = existingProfile.email!
+      userId = existingProfile.id
+      isNew = false
+    } else {
+      // Create new user with wallet
+      const email = `${walletAddress.toLowerCase()}@wallet.beyondfleet.io`
+      const password = `wallet_${nonce}_${Date.now()}`
+
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          [walletField]: walletAddress,
+          membership_tier: 'cadet',
+          vote_power: 1,
+        },
       })
+
+      if (authError) {
+        // If email exists, try to link wallet to existing profile
+        if (authError.message.includes('already registered')) {
+          return NextResponse.json({
+            success: false,
+            requiresLink: true,
+            message: '이 지갑을 기존 계정에 연결하려면 먼저 로그인하세요.',
+          })
+        }
+        throw authError
+      }
+
+      targetEmail = email
+      userId = authData.user?.id!
+      isNew = true
+
+      // Update profile with wallet address
+      if (authData.user) {
+        await supabaseAdmin
+          .from('profiles')
+          .update({ [walletField]: walletAddress })
+          .eq('id', authData.user.id)
+      }
     }
 
-    // Create new user with wallet
-    const email = `${walletAddress.toLowerCase()}@wallet.beyondfleet.io`
-    const password = `wallet_${nonce}_${Date.now()}`
-
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: {
-        [walletField]: walletAddress,
-        membership_tier: 'cadet',
-        vote_power: 1,
+    // Generate custom login magiclink
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink',
+      email: targetEmail,
+      options: {
+        redirectTo: `${new URL(request.url).origin}/auth/callback`,
       },
     })
 
-    if (authError) {
-      // If email exists, try to link wallet to existing profile
-      if (authError.message.includes('already registered')) {
-        return NextResponse.json({
-          success: false,
-          requiresLink: true,
-          message: '이 지갑을 기존 계정에 연결하려면 먼저 로그인하세요.',
-        })
-      }
-      throw authError
-    }
-
-    // Update profile with wallet address
-    if (authData.user) {
-      await supabaseAdmin
-        .from('profiles')
-        .update({ [walletField]: walletAddress })
-        .eq('id', authData.user.id)
-    }
+    if (linkError) throw linkError
 
     return NextResponse.json({
       success: true,
-      userId: authData.user?.id,
-      isNew: true,
-      message: '지갑으로 새 계정이 생성되었습니다!',
+      userId,
+      isNew,
+      actionLink: linkData.properties.action_link,
+      message: isNew ? '지갑으로 새 계정이 생성되었습니다!' : '로그인 성공!',
     })
   } catch (error) {
     console.error('Wallet auth error:', error)
